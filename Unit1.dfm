@@ -40,7 +40,6 @@ object Form1: TForm1
       Category = 'File'
       Caption = '&Open...'
       Dialog.DefaultExt = '.tr4'
-      Dialog.FileName = 'mix1w'
       Dialog.Filter = 'Tomb Raider 4 Files (*.tr4)|*.tr4|All files (*.*)|*.*'
       Dialog.Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofEnableSizing]
       Hint = 'Open|Opens an existing file'
