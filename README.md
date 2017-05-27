@@ -27,4 +27,4 @@ Download and change the Search Path in the Project Options setting to location o
 
 # Usage:
 Open .TR4 file. The room textures will be displayed.
-Click Save As to save the .prj file
+Click Save As to save the .prj file and .tga file.
