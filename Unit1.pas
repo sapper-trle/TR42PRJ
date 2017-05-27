@@ -81,7 +81,7 @@ begin
   p := l.ConvertToPRJ(FileSaveAs1.Dialog.FileName);
   p.Save(FileSaveAs1.Dialog.FileName);
   p.Free;
-  Halt(0);
+  // Halt(0);
 end;
 
 procedure TForm1.FileSaveAs1BeforeExecute(Sender: TObject);
