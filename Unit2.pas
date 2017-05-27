@@ -23,6 +23,7 @@ type
       nocol5,nocol6,nocol7,nocol8:(triH1,triH2:integer;corners:array[0..3] of UInt16);
   end;
 
+
 type
   TSector = packed record
     FDindex,BoxIndex :UInt16;
