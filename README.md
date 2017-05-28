@@ -24,7 +24,7 @@ This is a Delphi XE7 project.
 
 The Vampyre Imaging Library is required for .TGA support.
 Download and change the Search Path in the Project Options setting to location of Imaging Library.
-Use the version form the Mercurial repositry since the latest release version does not compile with Delphi XE7.
+Use the version form the Mercurial repository since the latest release version does not compile with Delphi XE7.
 http://sourceforge.net/p/imaginglib/code/ci/default/tree/
 
 # Usage:
