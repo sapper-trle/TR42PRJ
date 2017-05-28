@@ -52,7 +52,7 @@ begin
     MessageDlg('Not a TR4 file!', mtError, [mbOK], 0);
     Exit;
   end;
-  if l.file_version > 0 then l.Free;
+
   r := l.Load(FileOpen1.Dialog.FileName);
   case r of
     1:
