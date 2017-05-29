@@ -431,7 +431,7 @@ begin
       end;
     end;
   end;
-
+  Result:=0;
 end;
 
 function TTRLevel.ConvertToPRJ(const filename :string): TTRProject;
