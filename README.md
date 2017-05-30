@@ -16,7 +16,6 @@ Disadvantages:
 - No door info extracted - must manually reconnect all rooms
 - No objects extracted
 - No lights extracted
-- No box info extracted (how aktrekker do this?)
 - No texturing info extracted (how aktrekker do this?)
 - No triggers extracted
 
