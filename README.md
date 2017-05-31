@@ -31,4 +31,7 @@ http://sourceforge.net/p/imaginglib/code/ci/default/tree/
 
 # Usage:
 Open .TR4 file. The room textures will be displayed.
+
 Click Save As to save the .prj file and .tga file.
+
+If you load a TR2PRJ project created from same TR4 then the door info from that project will be copied.
