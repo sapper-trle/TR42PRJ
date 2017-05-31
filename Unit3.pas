@@ -594,7 +594,7 @@ begin
 //        s := string(roomname);// casting as string loses those characters
 //        StrPCopy(Rooms[i].name,s);
         for j:=0 to High(roomname) do   // try another method instead
-        begin                     // only care so can compare loaded ans saved PRJs in hex editor
+        begin                     // only care so can compare loaded and saved PRJs in hex editor
           Rooms[i].name[j]:=Char(roomname[j]);
         end;
         Rooms[i].z := br.ReadUInt32;
