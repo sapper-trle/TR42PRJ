@@ -1,11 +1,12 @@
-﻿unit Unit2;
+unit Unit2;
 
 interface
 
 uses
   unit3, // TTRProject type
   Vcl.Graphics, // TBitmap
-  System.Generics.Collections; // TList<...>
+  System.Generics.Collections, // TList<...>
+    Vcl.Samples.Gauges; // TGauge
 
 type
   TFloorType = (Floor,door,tilt,roof,trigger,lava,climb,split1,split2,split3,split4,
@@ -20,9 +21,8 @@ type
       tilt,roof:(addX,addZ:int8);
       climb:(n,s,e,w:Boolean);
       split1,split2,split3,split4,nocol1,nocol2,nocol3,nocol4,
-      nocol5,nocol6,nocol7,nocol8:(triH1,triH2:integer;corners:array[0..3] of UInt16);
+      nocol5,nocol6,nocol7,nocol8:(triHLO,triHHi:integer;corners:array[0..3] of UInt16);
   end;
-
 
 type
   TSector = packed record
@@ -33,6 +33,12 @@ type
     Ceiling:int8;
     floorInfo : TList<TParsedFloorData>;
     hasFD : Boolean;
+  end;
+
+type
+  TBox = packed record
+    xmin,xmax,zmin,zmax :UInt8;
+    truefloor,overlapindex : Int16;
   end;
 
 type
@@ -79,12 +85,14 @@ type
     num_animations, num_state_changes, num_anim_dispatches, num_anim_commands,
     num_meshtrees, size_keyframes, num_moveables, num_statics: uint32;
     num_floordata : UInt32;
+    num_boxes : UInt32;
     floordata : array of UInt16;
     rooms : array of TRoom;
+    boxes : array of TBox;
     constructor Create;
     destructor Destroy;override;
-    function Load(filename: string): uint8;
-    function ConvertToPRJ(const filename:string): TTRProject;
+    function Load(filename: string;out gauge:TGauge): uint8;
+    function ConvertToPRJ(const filename:string;SaveTGA:Boolean=True): TTRProject;
   end;
 
 implementation
@@ -138,7 +146,7 @@ begin
     end
     else if fd.tipo = trigger then
     begin
-      repeat
+      repeat //skip trigger floordata
         data := floordata[FDIndex+k];
         Inc(k);
       until ((data and $8000) = $8000);
@@ -152,8 +160,8 @@ begin
     end
     else if fd.tipo in [split1..nocol8] then
     begin
-      fd.triH1 := (data and $03e0) shr 4;
-      fd.triH2 := (data and $7c00) shr 8;
+      fd.triHLo := (data and $03e0) shr 4;
+      fd.triHHi := (data and $7c00) shr 8;
       data := floordata[FDindex+k];
       Inc(k);
       fd.corners[0]:=data and $000f;
@@ -189,7 +197,7 @@ begin
   inherited;
 end;
 
-function TTRLevel.Load(filename: string): uint8;
+function TTRLevel.Load(filename: string; out gauge:TGauge): uint8;
 const
   spr = 'spr';
   tex = 'tex';
@@ -209,10 +217,11 @@ var
   b:TBitmap;
   col :TColor;
   rd,gr,bl,al:UInt8;
-  success:Boolean;
   sectorFD:TList<TParsedFloorData>;
+  file_size : Int64;
 begin
   resultado := 0;
+  gauge.Progress:=0;
   if FileExists(filename) then
   begin
     FileMode := 0;
@@ -237,16 +246,16 @@ begin
     resultado := 3;
     version := 0;
   end;
-
+  gauge.Progress:=1;
   if resultado <> 0 then
   begin
     Result := resultado;
     Exit;
   end;
-  success:=False;
   memfile := TMemoryStream.Create;
   try
     memfile.LoadFromFile(filename);
+    file_size := memfile.Size;
     br := TBinaryReader.Create(memfile);
     try
       file_version := br.ReadUInt32;
@@ -257,6 +266,7 @@ begin
       size := br.ReadUInt32;
       geometry1 := TMemoryStream.Create;
       geometry1.CopyFrom(memfile,size);
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       geometry1.Position:=0;
       tex32:=TMemoryStream.Create;
       ZDecompressStream(geometry1,tex32);
@@ -270,13 +280,14 @@ begin
       br3:=TBinaryReader.Create(tex32);
       for i:=0 to b.Height-1 do
       begin
+        if i mod (256*2) = 0 then gauge.AddProgress(1);
         for j := 0 to 255 do
         begin
           bl:=br3.ReadByte;
           gr:=br3.ReadByte;
           rd:=br3.ReadByte;
           al:=br3.ReadByte;
-          if al=0 then
+          if al=0 then   // make alpha pixels magenta
           begin
             bl:=255;
             rd:=255;
@@ -294,9 +305,11 @@ begin
       memfile.Seek(4, soCurrent);
       size := br.ReadUInt32;
       memfile.Seek(size, soCurrent); //skip the textiles16
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       memfile.Seek(4, soCurrent);
       size := br.ReadUInt32;
       memfile.Seek(size, soCurrent); //skip the font and sky
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       size2 := br.ReadUInt32;
       size := br.ReadUInt32;
       geometry1 := TMemoryStream.Create;
@@ -314,6 +327,7 @@ begin
       SetLength(rooms,num_rooms);
       for i := 0 to High(rooms) do
       begin
+        gauge.AddProgress(1);
         r.z := br2.ReadInt32;
         r.x := br2.ReadInt32;
         r.yBottom := br2.ReadInt32;
@@ -352,11 +366,13 @@ begin
         r.altgroup := br2.ReadByte;
         rooms[i] := r;
       end;
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       num_floordata := br2.ReadUInt32;
       SetLength(floordata,num_floordata);
       geometry.ReadBuffer(floordata[0],num_floordata*2);
       size := br2.ReadUInt32; //num object mesh data words
       geometry.Seek(size * 2, soCurrent); //skip object meshes
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       size := br2.ReadUInt32; //num mesh pointers
       geometry.Seek(size * 4, soCurrent); //skip mesh pointers
       num_animations := br2.ReadUInt32;
@@ -369,8 +385,10 @@ begin
       geometry.Seek(num_anim_commands * 2, soCurrent);
       num_meshtrees := br2.ReadUInt32;
       geometry.Seek(num_meshtrees * 4, soCurrent);
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       size_keyframes := br2.ReadUInt32;
       geometry.Seek(size_keyframes * 2, soCurrent);
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       num_moveables := br2.ReadUInt32;
       geometry.Seek(num_moveables * 18, soCurrent);
       num_statics := br2.ReadUInt32;
@@ -380,7 +398,11 @@ begin
       s := s + br2.ReadChar;
       s := LowerCase(s);
       if s <> spr then
+      begin
         MessageDlg('SPR landmark not read correctly!',mtError,[mbOK],0);
+        resultado:=4;
+      end;
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       size := br2.ReadUInt32; // num sprite tex
       geometry.Seek(size * 16, soCurrent);  //skip sprite tex
       size := br2.ReadUInt32; // num sprite seq
@@ -391,11 +413,13 @@ begin
       geometry.Seek(size * 40, soCurrent);  //skip flyby cams
       size := br2.ReadUInt32; // num sound sources
       geometry.Seek(size * 16, soCurrent);  //skip sound sources
-      size2 := br2.ReadUInt32; // num Boxes
-      geometry.Seek(size2 * 8, soCurrent);  //skip boxes
+      num_boxes := br2.ReadUInt32; // num Boxes
+      SetLength(boxes,num_boxes);
+      geometry.ReadBuffer(boxes[0],num_boxes *8);
+      gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
       size := br2.ReadUInt32; // num overlaps
       geometry.Seek(size * 2, soCurrent);  //skip overlaps
-      geometry.Seek(size2 * 20, soCurrent);  //skip zones
+      geometry.Seek(num_boxes * 20, soCurrent);  //skip zones
       size := br2.ReadUInt32; // num anim tex words
       geometry.Seek(size * 2, soCurrent);  //skip anim tex words
       geometry.Seek(1,soCurrent); // skip uv ranges
@@ -404,20 +428,23 @@ begin
       s := s + br2.ReadChar;
       s := LowerCase(s);
       if s <> tex then
+      begin
         MessageDlg('TEX landmark not read correctly!',mtError,[mbOK],0);
+        resultado := 4;
+      end;
       size := br2.ReadUInt32; // num textures
       geometry.Seek(size * 38, soCurrent);  //skip textures
-
+      gauge.Progress:= gauge.MaxValue;
+      // rest of TR4 not read
       br2.Free;
       geometry.Free;
-      success:=True;
     finally
       br.Free;
     end;
   finally
     memfile.Free;
   end;
-  if success then
+  if resultado = 0 then
   begin
     for i:=0 to High(rooms) do
     begin
@@ -431,14 +458,14 @@ begin
       end;
     end;
   end;
-  Result:=0;
+  Result := resultado;
 end;
 
-function TTRLevel.ConvertToPRJ(const filename :string): TTRProject;
+function TTRLevel.ConvertToPRJ(const filename :string;SaveTGA:Boolean=True): TTRProject;
 var
   p:TTRProject;
   slots:uint32;
-  i,j,k,ii,jj:Integer;
+  i,j,k,ii,jj,h1,h2:Integer;
   r1:TRoom;
   sector:TSector;
   s:string;
@@ -449,22 +476,25 @@ var
   a:array[0..3]of integer;
   po:TPortal;
   isHorizontalDoor : Boolean;
+  bx:Uint32;
 begin
   if (num_rooms <= 100) then slots:=100
   else if ((num_rooms>100) and (num_rooms<=200)) then slots:=200
   else slots := 300;
   p := TTRProject.Create(num_rooms,slots);
+  if SaveTGA then
+  begin
+    s := ChangeFileExt(filename,'.tga');
+    InitImage(img);
+    img.Format := ifR8G8B8;
+    ConvertBitmapToData(bmp,img); // make sure bitmap's pixelformat was set to 24!!
+    SaveImageToFile(s,img);
+    FreeImage(img);
 
-  s := ChangeFileExt(filename,'.tga');
-  InitImage(img);
-  img.Format := ifR8G8B8;
-  ConvertBitmapToData(bmp,img); // make sure bitmap's pixelformat was set to 24!!
-  SaveImageToFile(s,img);
-  FreeImage(img);
-
-  p.TGAFilePath := ExtractShortPathName(s);
-  if LowerCase(p.TGAFilePath)='.tga' then MessageDlg('PRJ TGA filename error',mtError,[mbOK],0);
-  p.TGAFilePath := p.TGAFilePath+' ';  // don't forget space
+    p.TGAFilePath := ExtractShortPathName(s);
+    if LowerCase(p.TGAFilePath)='.tga' then MessageDlg('PRJ TGA filename error',mtError,[mbOK],0);
+    p.TGAFilePath := p.TGAFilePath+' ';  // don't forget space
+  end;
   for i:=0 to High(rooms) do
   begin
     r1:=rooms[i];
@@ -529,6 +559,13 @@ begin
         else if (sector.RoomAbove<>255) then
         begin
 //          p.Rooms[i].blocks[b].id := $5;
+        end;
+
+        bx:=(sector.BoxIndex and $7FF0) shr 4;
+        if (bx <> $7FF) and (bx < num_boxes) then
+        begin
+          if (boxes[bx].overlapindex and $8000)=$8000 then
+            p.Rooms[i].blocks[b].flags1 := p.Rooms[i].blocks[b].flags1 or $0020;
         end;
 
         if sector.hasFD then // need to check since no list of floordata for FDindex=0 sectors
@@ -657,6 +694,17 @@ begin
               a[3]:=fd.corners[3];
               maxCorner:=maxIntvalue(a);
               p.Rooms[i].blocks[b].Floor := p.Rooms[i].blocks[b].Floor-maxCorner;
+              if fd.tipo in [split2,nocol3,nocol4] then
+              begin
+                // if corners indicate opposite diagonal
+                //p.Rooms[i].blocks[b].flags3:=p.Rooms[i].blocks[b].flags3 or $1;
+                h1:=Max(a[0],Max(a[1],a[3]));
+                h2:=Max(a[1],Max(a[2],a[3]));
+                if fd.triHHi > Abs(h1-h2) then
+                begin
+//                  Dec(p.Rooms[i].blocks[b].Floor,4); //floor decreased by diff for corner ht > 15
+                end;
+              end;
               Continue;
             end; //floor splits
             if fd.tipo in [split3,split4,nocol5..nocol8] then // ceiling splits

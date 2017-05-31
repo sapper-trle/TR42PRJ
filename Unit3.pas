@@ -6,43 +6,43 @@ uses
   System.Classes; //TMemoryStream, TBinaryWriter
 
 type
-  TColor4 = record
+  TColor4 = packed record
     r,g,b,a : UInt8;
   end;
 
 type
-  TLight = record
+  TLight = packed record
     id : UInt16;
-    // rest omitted
+    case Integer of
+    1:(lightdata : array[0..69] of UInt8); // 72 bytes (minus 2) !Michiel has 64 bytes for this
+    2:(data : array[0..39] of Uint8); // 42 bytes (minus 2 for id)
   end;
 
 type
-  TObj = record
+  TRoomObj = packed record
     id : uint16;
-    //rest omitted
+    xpos,zpos,xsize,zsize : Int16;
+    ypos,room,objectID,OCB,
+    orientation :UInt16;
+    worldz,worldy,worldx : int32;
+    what5,facing : UInt16;
+    roll : Int16;
+    tint : UInt16;
+    timer : int16;
+    // trigger only data
+    triggertype, itemnumber : UInt16;
+    trigtimer : int16;
+    switches, itemtype : UInt16;
   end;
 
 type
-  TDoor = record
+  TDoor = packed record
     id:uint16;
     xpos,zpos,
     xsize,zsize : Int16;
     yclickabovefloor : UInt16;
-    room,thingindex :UInt16;
-    filler:array[0..12] of UInt16;
-  end;
-
-type TAnimTex = record
-  defined,
-  firsttile,
-  lasttile : UInt32;
-end;
-
-type
-  TTexInfo = record
-    x,y : UInt8;
-    page : UInt16;
-    FlipX,right,flipy,bottom : UInt8;
+    room, slot :UInt16;
+    filler:array[0..12] of UInt16; // 13 bytes
   end;
 
 type
@@ -54,7 +54,7 @@ type
   end;
 
 type
-  TBlock = record
+  TBlock = packed record
     id, flags1 : UInt16;
     Floor, ceiling : int16;
     floorcorner : array[0..3] of Int8;
@@ -77,15 +77,15 @@ type
     xpos, zpos: int16;
     link: uint16;
     numdoors : UInt16;
-    doorthingindex : array of UInt16; //not used
-    doors:array of TDoor; //not used
+    doorthingindex : array of UInt16;
+    doors:array of TDoor;
     numobjects : UInt16;
-    objthingindex : array of UInt16; //not used
-    objects : array of TObject; //not implemented
+    objthingindex : array of UInt16;
+    objects : array of TRoomObj;
     ambient : TColor4;
     numlights : UInt16;
-    lightthingindex : array of UInt16; //not used
-    lights : array of TLight; //not implemented
+    lightthingindex : array of UInt16;
+    lights : array of TLight; //not fully implemented needs further parsing
     fliproom : int16;
     flags1 :UInt16;
     water,mist,reflection : UInt8;
@@ -93,7 +93,31 @@ type
     blocks : array of TBlock;
   end;
 
+type TAnimTex = packed record
+  defined,
+  firsttile,
+  lasttile : UInt32;
+end;
+
 type
+  TTexInfo = packed record
+    x : UInt8;
+    y : UInt16;
+    unused,FlipX,right,flipy,bottom : UInt8;
+  end;
+
+type
+  TWASObject = record
+    SlotType : UInt16;
+    name : string;
+    slot : UInt32;
+    w,n,e,s : UInt16;
+    collision : array[1..5,1..5] of Int16;
+    mode : array[1..5,1..5] of Int16;
+  end;
+
+type
+  TAktrekkerPRJ = class;
   TTRProject = class
   private
     procedure writesz(var sz:array of Char;len:Integer;var bw: TBinaryWriter);
@@ -105,10 +129,14 @@ type
     procedure writedoor(const d:TDoor;var bw : TBinaryWriter);
     procedure writeblock(const b:TBlock;var bw:TBinaryWriter);
     procedure writeblocktex(const bt:TBlockTex;var bw:TBinaryWriter);
+    procedure writeObj(const ob:TRoomObj;var bw :TBinaryWriter);
+    procedure writeLight(const l:TLight; var bw :TBinaryWriter);
     procedure writeRoom(index: integer; var bw: TBinaryWriter);
+    procedure writeWASObj(const ob: TWASObject; var bw :TBinaryWriter);
+    function readstr(const terminator:char;var br:TBinaryReader):string;
   public
 //{$X+}
-    signature: array[0..11] of char;
+    signature: array[0..11] of Char;
     NumRoomSlots: uint32;
     NumUsedRooms:UInt16; // extra field for convenience
     Rooms: array of TRoom;
@@ -123,7 +151,8 @@ type
     NumTextures : UInt32;
     Textures : array of TTexInfo;
     WASFilePath : string;
-    // object data omitted
+    NumObjects : UInt32;
+    WASObjects : array of TWASObject;
     NumAnimRanges : UInt32;
     UnusedAnimRanges : array of UInt32;
     Animtextures : array of UInt32;
@@ -131,7 +160,13 @@ type
     textureSounds : array of UInt8;
     BumpSettings : array of UInt8;
     function Save(filename: string): Boolean;
+    function Load(filename: string): UInt8;
+    function CopyDoorsFromPRJ(var p:TAktrekkerPRJ): Boolean;
+    function isCompatible(var p:TAktrekkerPRJ) : Boolean;
     constructor Create(numrooms:UInt16;numslots:UInt32);
+  end;
+
+  TAktrekkerPRJ = class(TTRProject)
   end;
 
 implementation
@@ -240,11 +275,31 @@ begin
   end;
 end;
 
+procedure TTRProject.writeWASObj(const ob: TWASObject; var bw :TBinaryWriter);
+var
+  i,j : Integer;
+begin
+  bw.Write(ob.SlotType);
+  if ob.SlotType = 0 then Exit;
+  writestr(ob.name,bw);
+  bw.Write(ob.slot);
+  bw.Write(ob.w);
+  bw.Write(ob.n);
+  bw.Write(ob.e);
+  bw.Write(ob.s);
+  for i:=1 to 5 do
+    for j:=1 to 5 do
+      bw.Write(ob.collision[i][j]);
+  for i:=1 to 5 do
+    for j:=1 to 5 do
+      bw.Write(ob.mode[i][j]);
+end;
+
 procedure TTRProject.writetex(const t:TTexInfo;var bw:TBinaryWriter);
 begin
   bw.Write(t.x);
   bw.Write(t.y);
-  bw.Write(t.page);
+  bw.Write(t.unused);
   bw.Write(t.FlipX);
   bw.Write(t.right);
   bw.Write(t.flipy);
@@ -262,7 +317,7 @@ begin
   bw.Write(d.zsize);
   bw.Write(d.yclickabovefloor);
   bw.Write(d.room);
-  bw.Write(d.thingindex);
+  bw.Write(d.slot);
   for i:=0 to High(d.filler) do bw.Write(d.filler[i]);
 end;
 
@@ -308,6 +363,65 @@ begin
   bw.Write(b.flags3);
 end;
 
+procedure TTRProject.writeObj(const ob:TRoomObj;var bw :TBinaryWriter);
+begin
+  bw.Write(ob.id);
+  bw.Write(ob.xpos);
+  bw.Write(ob.zpos);
+  bw.Write(ob.xsize);
+  bw.Write(ob.zsize);
+  bw.Write(ob.ypos);
+  bw.Write(ob.room);
+  bw.Write(ob.objectID);
+  bw.Write(ob.OCB);
+  bw.Write(ob.orientation);
+  bw.Write(ob.worldz);
+  bw.Write(ob.worldy);
+  bw.Write(ob.worldx);
+  bw.Write(ob.what5);
+  bw.Write(ob.facing);
+  bw.Write(ob.roll);
+  bw.Write(ob.tint);
+  bw.Write(ob.timer);
+
+  if ob.id = $10 then  //trigger
+  begin
+    bw.Write(ob.triggertype);
+    bw.Write(ob.itemnumber);
+    bw.Write(ob.trigtimer);
+    bw.Write(ob.switches);
+    bw.Write(ob.itemtype);
+  end;
+end;
+
+procedure TTRProject.writeLight(const l:TLight; var bw :TBinaryWriter);
+var
+  i : integer;
+begin
+  bw.Write(l.id);
+  case l.id of
+    $4000,
+    $6000,
+    $4200,
+    $5000,
+    $4100,
+    $4020 :
+      begin
+        for i:=0 to High(l.lightdata) do
+          bw.Write(l.lightdata[i]);
+      end;
+    $4C00,
+    $4400,
+    $4800,
+    $4080,
+    $4040 :
+      begin
+        for i:=0 to High(l.data) do
+          bw.Write(l.data[i]);
+      end;
+  end;
+end;
+
 procedure TTRProject.writeRoom(index: Integer; var bw: TBinaryWriter);
 var
   r: TRoom;
@@ -344,7 +458,10 @@ begin
   if r.numobjects > 0 then
   begin
     writearray(r.objthingindex,bw);
-    // TODO: write object array
+    for i:=0 to r.numobjects-1 do
+    begin
+      WriteObj(r.objects[i],bw);
+    end;
   end;
   bw.Write(r.ambient.r);
   bw.Write(r.ambient.g);
@@ -354,7 +471,10 @@ begin
   if r.numlights > 0 then
   begin
     writearray(r.lightthingindex,bw);
-    // TODO: write light array
+    for i:=0 to High(r.lights) do
+    begin
+      writeLight(r.lights[i],bw);
+    end;
   end;
   bw.Write(r.fliproom);
   bw.Write(r.flags1);
@@ -366,6 +486,19 @@ begin
   begin
     writeblock(r.blocks[i],bw);
   end;
+end;
+
+function TTRProject.readstr(const terminator:char;var br:TBinaryReader):string;
+var
+  c : Char;
+  s : string;
+begin
+  Result :='';
+  repeat
+    c := br.ReadChar;
+    s := s + c;
+  until c = terminator;
+  Result:=s;
 end;
 
 function TTRproject.Save(filename: string): Boolean;
@@ -391,15 +524,21 @@ begin
     writestr(TGAFilePath,bw);
     if TGAFilePath <> 'NA ' then
     begin
-      bw.Write(NumTextures);
+      bw.Write(NumTextures); // must write this even if zero
       for i:=0 to High(Textures) do
       begin
         writetex(Textures[i],bw);
       end;
     end;
-    writestr(WASFilePath,bw); //always 'NA ';
-    // object data omitted
-
+    writestr(WASFilePath,bw);
+    if WASFilePath <> 'NA ' then
+    begin
+      bw.Write(NumObjects);
+      for i:=0 to High(WASObjects) do
+      begin
+        writeWASObj(WASObjects[i],bw);
+      end;
+    end;
     bw.Write(NumAnimRanges);
     writearray(UnusedAnimranges,bw);
     writearray(animtextures,bw);
@@ -420,6 +559,257 @@ begin
     memfile.free;
   end;
 end;
+
+function TTRProject.Load(filename: string) :uint8;
+var
+  memfile: TMemoryStream;
+  br : TBinaryReader;
+  sig : array[0..11] of AnsiChar; //needs to be AnsiChar
+  i,j,numblocks:Integer;
+  roomname:array[0..79] of AnsiChar; //needs to be AnsiChar
+  s:string;
+  id : UInt16;
+begin
+  Result := 0;
+  memfile := TMemoryStream.Create;
+  try
+    memfile.LoadFromFile(filename);
+    br:=TBinaryReader.Create(memfile);
+    memfile.ReadBuffer(sig[0],12);
+    if sig <> 'PROJFILE1' then
+    begin
+      Result:=1;
+    end
+    else
+    begin
+      NumRoomSlots:=br.ReadUInt32;
+      SetLength(Rooms,NumRoomSlots);
+
+      for i:=0 to High(Rooms) do
+      begin
+        Rooms[i].id := br.ReadUInt16;
+        if Rooms[i].id = 1 then Continue;
+        Inc(NumUsedRooms);
+        memfile.ReadBuffer(roomname[0],80);// roomname can contain more characters after first #0 null
+//        s := string(roomname);// casting as string loses those characters
+//        StrPCopy(Rooms[i].name,s);
+        for j:=0 to High(roomname) do   // try another method instead
+        begin                     // only care so can compare loaded ans saved PRJs in hex editor
+          Rooms[i].name[j]:=Char(roomname[j]);
+        end;
+        Rooms[i].z := br.ReadUInt32;
+        Rooms[i].y := br.ReadInt32; // aktrekker says unknown1, Michiel says y
+        Rooms[i].x := br.ReadUInt32;
+        Rooms[i].unknown2 := br.ReadUInt32;
+        Rooms[i].what := br.ReadUInt16;
+        Rooms[i].xoffset := br.ReadUInt16;
+        Rooms[i].zoffset := br.ReadUInt16;
+        Rooms[i].xsize := br.ReadInt16;
+        Rooms[i].zsize := br.ReadInt16;
+        Rooms[i].xpos := br.ReadInt16;
+        Rooms[i].zpos := br.ReadInt16;
+        Rooms[i].link := br.ReadUInt16;
+
+        Rooms[i].numdoors := br.ReadUInt16;
+        if Rooms[i].numdoors >0 then
+        begin
+          SetLength(Rooms[i].doorthingindex, Rooms[i].numdoors);
+          memfile.ReadBuffer(Rooms[i].doorthingindex[0], Rooms[i].numdoors*SizeOf(Uint16));
+          SetLength(Rooms[i].doors, Rooms[i].numdoors);
+          memfile.ReadBuffer(Rooms[i].doors[0], Rooms[i].numdoors*SizeOf(TDoor));
+        end;
+
+        Rooms[i].numobjects := br.ReadUInt16;
+        if Rooms[i].numobjects >0 then
+        begin
+          SetLength(Rooms[i].objthingindex, Rooms[i].numobjects);
+          memfile.ReadBuffer(Rooms[i].objthingindex[0],Rooms[i].numobjects*SizeOf(Uint16));
+          SetLength(Rooms[i].objects, Rooms[i].numobjects);
+          for j:=0 to High(Rooms[i].objects) do
+          begin
+            id := br.ReadUInt16;
+            memfile.Seek(-2,soCurrent);
+            if id = $10 then memfile.ReadBuffer(rooms[i].objects[j], 52) //trigger
+            else memfile.ReadBuffer(Rooms[i].objects[j], 42);//object
+          end;
+        end;
+
+        memfile.ReadBuffer(Rooms[i].ambient,4);
+
+        Rooms[i].numlights := br.ReadUInt16;
+        if Rooms[i].numlights>0 then
+        begin
+          SetLength(Rooms[i].lightthingindex, Rooms[i].numlights);
+          memfile.ReadBuffer(rooms[i].lightthingindex[0],rooms[i].numlights*sizeof(uint16));
+          SetLength(Rooms[i].lights, rooms[i].numlights);
+          for j:=0 to High(Rooms[i].lights) do
+          begin
+            Rooms[i].lights[j].id := br.ReadUInt16;
+            case Rooms[i].lights[j].id of
+              $4000,   // lights
+              $6000,
+              $4200,
+              $5000,
+              $4100,
+              $4020 : memfile.ReadBuffer(Rooms[i].lights[j].lightdata[0], 70);
+              $4C00,   // sound sources cameras sinks
+              $4400,
+              $4800,
+              $4080,
+              $4040 : memfile.ReadBuffer(Rooms[i].lights[j].data[0], 40);
+            end;
+          end;
+        end;
+
+        Rooms[i].fliproom := br.ReadInt16;
+        Rooms[i].flags1 := br.ReadUInt16;
+        Rooms[i].water := br.ReadByte;
+        Rooms[i].mist := br.ReadByte;
+        Rooms[i].reflection := br.ReadByte;
+        Rooms[i].flags2 := br.ReadUInt16;
+
+        numblocks := rooms[i].xsize*rooms[i].zsize;
+        SetLength(Rooms[i].blocks, numblocks);
+        memfile.ReadBuffer(rooms[i].blocks[0], numblocks*SizeOf(TBlock));
+      end; // loop thru rooms
+
+      NumThings := br.ReadUInt32;
+      MaxThings := br.ReadUInt32;
+      SetLength(UnusedThings, maxthings);
+      memfile.ReadBuffer(UnusedThings[0],MaxThings*SizeOf(uint32));
+
+      NumLights := br.ReadUInt32;
+      SetLength(UnusedLights,768);
+      memfile.ReadBuffer(unusedlights[0],768 * SizeOf(uint32));
+
+      NumTriggers := br.ReadUInt32;
+      SetLength(UnusedTriggers, 512);
+      memfile.ReadBuffer(UnusedTriggers[0], 512 * SizeOf(uint32));
+
+      TGAFilePath := readstr(' ',br);
+      if TGAFilePath<>'NA ' then
+      begin
+        NumTextures := br.ReadUInt32; // should be at least 256
+        SetLength(Textures, numtextures);
+        if NumTextures>0 then  // but my PRJs have file path and zero textures!
+          memfile.ReadBuffer(Textures[0],NumTextures*SizeOf(TTexInfo));
+      end;
+
+      WASFilePath:=readstr(' ',br);
+      if WASFilePath<>'NA ' then
+      begin
+        NumObjects := br.ReadUInt32; // should be 526 TRLE 681 NGLE
+        SetLength(WASObjects, NumObjects);
+        for i:=0 to High(WASObjects) do
+        begin
+          WASObjects[i].SlotType := br.ReadUInt16;
+          if WASObjects[i].SlotType = 0 then Continue;
+          WASObjects[i].name := readstr(' ',br);
+          WASObjects[i].slot := br.ReadUInt32;
+          WASObjects[i].w := br.ReadUInt16;
+          WASObjects[i].n := br.ReadUInt16;
+          WASObjects[i].e := br.ReadUInt16;
+          WASObjects[i].s := br.ReadUInt16;
+          memfile.ReadBuffer(WASObjects[i].collision[1][1], 5*5*2);
+          memfile.ReadBuffer(WASObjects[i].mode[1][1], 5*5*2);
+        end;
+      end;
+
+      NumAnimRanges := br.ReadUInt32;
+      SetLength(UnusedAnimRanges, 40);
+      memfile.ReadBuffer(UnusedAnimRanges[0],40*SizeOf(uint32));
+      SetLength(Animtextures,256);
+      memfile.ReadBuffer(Animtextures[0],256*SizeOf(uint32));
+      SetLength(animranges,40);
+      memfile.ReadBuffer(animranges[0],40*sizeOf(TAnimtex));
+      SetLength(textureSounds,256);
+      memfile.ReadBuffer(textureSounds[0],256);
+      SetLength(BumpSettings,256);
+      memfile.ReadBuffer(bumpsettings[0],256);
+      //NGLE header if any omitted
+    end; // is a 'PROJFILE1'
+  finally
+    br.Free;
+    memfile.Free;
+  end;
+end;
+
+function TTRProject.CopyDoorsFromPRJ(var p:TaktrekkerPRJ): Boolean;
+var
+  i,j,k,b,ii : Integer;
+  r : TRoom;
+  blok : TBlock;
+begin
+  // roomedit randomly changes floor near doors in some cases????
+  // so some bugs in TR2PRJ caused by building doors
+  Result:=False;
+  // assumes the two PRJs have been checked for equal numrooms and numblocks
+  for i:=0 to High(Rooms) do
+  begin
+    r:=p.Rooms[i];
+    if r.id = 1 then Continue;
+    Rooms[i].link := r.link;
+    Rooms[i].numdoors := r.numdoors;
+    SetLength(Rooms[i].doorthingindex, r.numdoors);
+    for ii:=0 to High(Rooms[i].doorthingindex) do
+    begin
+      Rooms[i].doorthingindex[ii]:=r.doorthingindex[ii];
+    end;
+    SetLength(Rooms[i].doors, r.numdoors);
+    for ii:=0 to High(Rooms[i].doors) do
+    begin
+      Rooms[i].doors[ii].id := r.doors[ii].id;
+      Rooms[i].doors[ii].xpos := r.doors[ii].xpos;
+      Rooms[i].doors[ii].zpos := r.doors[ii].zpos;
+      Rooms[i].doors[ii].xsize := r.doors[ii].xsize;
+      Rooms[i].doors[ii].zsize := r.doors[ii].zsize;
+      Rooms[i].doors[ii].yclickabovefloor := r.doors[ii].yclickabovefloor;
+      Rooms[i].doors[ii].room := r.doors[ii].room;
+      Rooms[i].doors[ii].slot := r.doors[ii].slot;
+    end;
+    for j:=0 to r.zsize-1 do
+    begin
+      for k:=0 to r.xsize-1 do
+      begin
+        b := j*r.xsize+k;
+        blok:=r.blocks[b];
+        if blok.id in [$7,$3,$5,$6] then
+        begin
+          Rooms[i].blocks[b].id := blok.id;
+          if blok.id = $6 then
+          begin
+            Rooms[i].blocks[b].Floor := blok.Floor;
+            Rooms[i].blocks[b].ceiling := blok.ceiling;
+          end;
+        end;
+      end; // end x column blocks
+    end; // end z row blocks
+  end; // loop thru rooms
+
+  //TODO: UnusedThings array  // maybe not necessary PRJ opens in roomedit
+
+  Result := True;
+end;
+
+function TTRProject.isCompatible(var p:TAktrekkerPRJ) : Boolean;
+var
+  i,j,k ,b: Integer;
+  r : TRoom;
+begin
+  Result :=False;
+  if p.NumRoomSlots < NumRoomSlots then Exit;
+  if NumUsedRooms <> p.NumUsedRooms then Exit;
+  for i:=0 to High(Rooms) do
+  begin
+    r:=p.Rooms[i];
+    if Rooms[i].id <> r.id then Exit;
+    if Rooms[i].id = 1 then Continue;
+    if Rooms[i].xsize <> r.xsize then Exit;
+    if Rooms[i].zsize <> r.zsize then Exit;
+  end;
+  Result:=True;
+end;
+
 
 end.
 
