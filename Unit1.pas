@@ -237,10 +237,14 @@ begin
       FileOpen1.Dialog.FileName := filename;
       FileOpen1Accept(nil);
     end
-    else if (LowerCase(ExtractFileExt(FileName)) = '.prj') and (l.file_version > 0)then
+    else if (LowerCase(ExtractFileExt(FileName)) = '.prj') and (Assigned(l))then
     begin
       FileOpen2.Dialog.FileName := filename;
       FileOpen2Accept(nil);
+    end
+    else if (LowerCase(ExtractFileExt(FileName)) = '.prj') and (not Assigned(l))then
+    begin
+      MessageDlg('TR4 file not loaded.',mtError,[mbOK],0);
     end
     else
     begin
