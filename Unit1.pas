@@ -142,9 +142,12 @@ begin
   except
     on EReadError do r:=2;
   end;
-  p := l.ConvertToPRJ('',False);
-  if not p.isCompatible(aktrekker) then r:=3;
-  p.Free;
+  if r=0 then
+  begin
+    p := l.ConvertToPRJ('',False);
+    if not p.isCompatible(aktrekker) then r:=3;
+    p.Free;
+  end;
   case r of
   0:;
   1:
