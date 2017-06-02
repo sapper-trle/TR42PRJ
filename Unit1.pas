@@ -33,6 +33,10 @@ type
     Cancel1: TMenuItem;
     Button2: TButton;
     UnloadPRJ: TAction;
+    GroupBox1: TGroupBox;
+    CheckBox1: TCheckBox;
+    CheckBox2: TCheckBox;
+    CheckBox3: TCheckBox;
     procedure FileOpen1Accept(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -49,7 +53,7 @@ type
     procedure UnloadPRJExecute(Sender: TObject);
   private
     { Private declarations }
-    const program_version = 0.5;
+    const program_version = 0.6;
   public
     { Public declarations }
     l: TTRLevel;
@@ -183,7 +187,9 @@ begin
   p := l.ConvertToPRJ(FileSaveAs1.Dialog.FileName);
   if Assigned(aktrekker) then
   begin
-    p.CopyDoorsFromPRJ(aktrekker);
+    if CheckBox1.Checked then p.CopyDoorsFromPRJ(aktrekker);
+    if CheckBox2.Checked then p.CopyTexFromPRJ(aktrekker);
+    if CheckBox3.Checked then p.CopyLightsFromPRJ(aktrekker);
   end;
   p.Save(FileSaveAs1.Dialog.FileName);
   p.Free;
@@ -288,6 +294,9 @@ end;
 procedure TForm1.UnloadPRJUpdate(Sender: TObject);
 begin
   Button2.Enabled := Assigned(aktrekker);
+  CheckBox1.Enabled := Assigned(aktrekker);
+  CheckBox2.Enabled := Assigned(aktrekker);
+  CheckBox3.Enabled := Assigned(aktrekker);
 end;
 
 procedure TForm1.Cancel1Click(Sender: TObject);

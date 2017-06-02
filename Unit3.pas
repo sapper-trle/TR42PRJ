@@ -16,6 +16,16 @@ type
     case Integer of
     1:(lightdata : array[0..69] of UInt8); // 72 bytes (minus 2) !Michiel has 64 bytes for this
     2:(data : array[0..39] of Uint8); // 42 bytes (minus 2 for id)
+    3:(xpos,zpos,xsize,Zsize : Int16;
+       ypos,room,slot,timer,orientation : UInt16;
+       z,y,x : Int32;
+       what5,facing: UInt16;
+       roll : Int16;
+       speed,ocb:UInt16;
+       intensity : Int16;
+       in_,out_,x_,y_,Length,cut:Single;
+       r,g,b,on_ : UInt8;
+      );
   end;
 
 type
@@ -162,6 +172,8 @@ type
     function Save(filename: string): Boolean;
     function Load(filename: string): UInt8;
     function CopyDoorsFromPRJ(var p:TAktrekkerPRJ): Boolean;
+    function CopyTexFromPRJ(var p:TAktrekkerPRJ) : Boolean;
+    function CopyLightsFromPRJ(var p:TAktrekkerPRJ) : Boolean;
     function isCompatible(var p:TAktrekkerPRJ) : Boolean;
     constructor Create(numrooms:UInt16;numslots:UInt32);
   end;
@@ -786,9 +798,99 @@ begin
     end; // end z row blocks
   end; // loop thru rooms
 
-  //TODO: UnusedThings array  // maybe not necessary PRJ opens in roomedit
+  //TODO: UnusedThings array  // maybe not necessary - PRJ opens in roomedit
 
   Result := True;
+end;
+
+function TTRProject.CopyTexFromPRJ(var p:TAktrekkerPRJ) : Boolean;
+var
+  i,j,k,b,ii : Integer;
+  r : TRoom;
+  blok : TBlock;
+begin
+  Result:=False;
+  // assumes the two PRJs have been checked for equal numrooms and numblocks
+  for i:=0 to High(Rooms) do
+  begin
+    r:=p.Rooms[i];
+    if r.id = 1 then Continue;
+    for j:=0 to r.zsize-1 do
+    begin
+      for k:=0 to r.xsize-1 do
+      begin
+        b := j*r.xsize+k;
+        blok:=r.blocks[b];
+        for ii:=0 to High(Rooms[i].blocks[b].textures) do
+        begin
+          Rooms[i].blocks[b].textures[ii].tipo := blok.textures[ii].tipo;
+          Rooms[i].blocks[b].textures[ii].index := blok.textures[ii].index;
+          Rooms[i].blocks[b].textures[ii].flags1 := blok.textures[ii].flags1;
+          Rooms[i].blocks[b].textures[ii].rotation := blok.textures[ii].rotation;
+          Rooms[i].blocks[b].textures[ii].triangle := blok.textures[ii].triangle;
+        end;
+        Rooms[i].blocks[b].Floor := blok.Floor;
+        Rooms[i].blocks[b].ceiling := blok.ceiling;
+        for ii:= 0 to 3 do
+        begin
+          Rooms[i].blocks[b].fdiv[ii]:=blok.fdiv[ii];
+          Rooms[i].blocks[b].cdiv[ii]:=blok.cdiv[ii];
+        end;
+      end; // end x column blocks
+    end; // end z row blocks
+  end; // loop thru rooms
+
+  NumTextures := p.NumTextures;
+  SetLength(Textures, numtextures);
+  for i :=0 to High(Textures) do
+  begin
+    Textures[i].x:=p.Textures[i].x;
+    Textures[i].y:=p.Textures[i].y;
+    Textures[i].unused := p.Textures[i].unused;
+    Textures[i].FlipX := p.Textures[i].FlipX;
+    Textures[i].right := p.Textures[i].right;
+    Textures[i].flipy := p.Textures[i].flipy;
+    Textures[i].bottom := p.Textures[i].bottom;
+  end;
+
+  Result:=True;
+end;
+
+function TTRProject.CopyLightsFromPRJ(var p:TAktrekkerPRJ) : Boolean;
+var
+  i,j,k: Integer;
+  r : TRoom;
+begin
+  Result:=False;
+  // assumes the two PRJs have been checked for equal numrooms
+  for i:=0 to High(Rooms) do
+  begin
+    r:=p.Rooms[i];
+    if r.id = 1 then Continue;
+    Rooms[i].numlights := r.numlights;
+    SetLength(Rooms[i].lightthingindex, r.numlights);
+    for j:=0 to High(Rooms[i].lightthingindex) do
+    begin
+      Rooms[i].lightthingindex[j]:=r.lightthingindex[j]
+    end;
+    SetLength(Rooms[i].lights, r.numlights);
+    for j:=0 to High(Rooms[i].lights) do
+    begin
+      Rooms[i].lights[j].id:= r.lights[j].id;
+      for k:=0 to High(Rooms[i].lights[j].lightdata) do
+      begin
+        Rooms[i].lights[j].lightdata[k] := r.lights[j].lightdata[k];
+      end;
+      if Rooms[i].lights[j].id = $6000 then //aktrekker gets sign wrong for shadow intensity
+      begin
+        Rooms[i].lights[j].intensity := -Rooms[i].lights[j].intensity;
+      end;
+    end;
+  end;
+
+  NumLights := p.NumLights;
+
+  Result:=True;
 end;
 
 function TTRProject.isCompatible(var p:TAktrekkerPRJ) : Boolean;

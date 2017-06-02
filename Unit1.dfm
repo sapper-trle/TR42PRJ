@@ -64,9 +64,41 @@ object Form1: TForm1
     Action = UnloadPRJ
     TabOrder = 3
   end
-  object ActionList1: TActionList
+  object GroupBox1: TGroupBox
     Left = 296
-    Top = 144
+    Top = 102
+    Width = 145
+    Height = 91
+    Caption = 'Copy from TR2PRJ'
+    TabOrder = 4
+    object CheckBox1: TCheckBox
+      Left = 16
+      Top = 16
+      Width = 97
+      Height = 17
+      Caption = 'Doors'
+      TabOrder = 0
+    end
+    object CheckBox2: TCheckBox
+      Left = 16
+      Top = 39
+      Width = 97
+      Height = 17
+      Caption = 'Textures'
+      TabOrder = 1
+    end
+    object CheckBox3: TCheckBox
+      Left = 16
+      Top = 62
+      Width = 97
+      Height = 17
+      Caption = 'Lights'
+      TabOrder = 2
+    end
+  end
+  object ActionList1: TActionList
+    Left = 384
+    Top = 192
     object FileOpen1: TFileOpen
       Category = 'File'
       Caption = '&Open...'
@@ -84,6 +116,7 @@ object Form1: TForm1
       Caption = 'E&xit'
       Hint = 'Exit|Quits the application'
       ImageIndex = 43
+      ShortCut = 27
     end
     object FileSaveAs1: TFileSaveAs
       Category = 'File'
@@ -117,7 +150,7 @@ object Form1: TForm1
     end
   end
   object MainMenu1: TMainMenu
-    Left = 416
+    Left = 424
     Top = 192
     object File1: TMenuItem
       Caption = '&File'
@@ -141,7 +174,7 @@ object Form1: TForm1
   end
   object PopupMenu1: TPopupMenu
     OnPopup = PopupMenu1Popup
-    Left = 352
+    Left = 344
     Top = 192
     object SaveTGA1: TMenuItem
       Caption = 'Save TGA...'
