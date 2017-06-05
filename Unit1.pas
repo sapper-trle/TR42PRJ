@@ -53,7 +53,7 @@ type
     procedure UnloadPRJExecute(Sender: TObject);
   private
     { Private declarations }
-    const program_version = 0.6;
+    const program_version = 0.7;
   public
     { Public declarations }
     l: TTRLevel;
@@ -85,6 +85,7 @@ begin
   end;
   try
     if Assigned(l) then FreeAndNil(l);
+    if Assigned(aktrekker) then FreeAndNil(aktrekker); //unload TR2PRJ project
     l := TTRLevel.Create;
     r := l.Load(FileOpen1.Dialog.FileName,Gauge1);
   except
@@ -185,7 +186,7 @@ var
   p: TTRProject;
 begin
   p := l.ConvertToPRJ(FileSaveAs1.Dialog.FileName);
-  if Assigned(aktrekker) then
+  if Assigned(aktrekker) and p.isCompatible(aktrekker) then
   begin
     if CheckBox1.Checked then p.CopyDoorsFromPRJ(aktrekker);
     if CheckBox2.Checked then p.CopyTexFromPRJ(aktrekker);
@@ -212,6 +213,7 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+//  ReportMemoryLeaksOnShutdown:=True;
   Image1.Canvas.Brush.Color:=clRed;
   Image1.Canvas.Brush.Style:=bsDiagCross;
   Image1.Canvas.FillRect(Image1.ClientRect);
