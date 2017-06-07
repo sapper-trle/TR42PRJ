@@ -53,7 +53,7 @@ type
     procedure UnloadPRJExecute(Sender: TObject);
   private
     { Private declarations }
-    const program_version = 0.7;
+    const program_version = 0.71;
   public
     { Public declarations }
     l: TTRLevel;
