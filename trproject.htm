@@ -2768,14 +2768,14 @@ is on the North side of the block and faces to the North. As for the section num
   
   </td>
  </tr>
- <tr height="148">
+ <tr height="166">
   <td valign="top" width="155" style='border:solid Black 0.5pt;padding:0.0pt 0.0pt 5.5pt 5.5pt ;'>
   <p class=Normal>cFDiv</p>
   
   </td>
   <td valign="top" width="436" style='border:solid Black 0.5pt;padding:0.0pt 0.0pt 5.5pt 5.5pt ;'>
   <p class=Normal>This is an array of 4 signed byte values. Each value represents one corner of the surface of the floor part of the block that is raised using the E-D keys. It divides the walls into 2 parts for texturing.
-  Values are always negative.</p>
+  Values are relative to sYClickWorldFloor. For walls this means always negative but for raised blocks can be positive.</p>
   
   <p class=Normal>This value is added to sYClickWorldFloor to get the actual click height of this corner of the block. The order of the bytes is</p>
   
@@ -2810,7 +2810,7 @@ is on the North side of the block and faces to the North. As for the section num
   
   </td>
  </tr>
- <tr height="258">
+ <tr height="277">
   <td valign="top" width="155" style='border:solid Black 0.5pt;padding:0.0pt 0.0pt 5.5pt 5.5pt ;'>
   <p class=Normal>texTextures</p>
   
