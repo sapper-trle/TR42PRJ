@@ -213,7 +213,10 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-//  ReportMemoryLeaksOnShutdown:=True;
+{$IFDEF DEBUG}
+  ReportMemoryLeaksOnShutdown:=True;
+  FileOpen1.Dialog.FileName:='mix1w';
+{$ENDIF}
   Image1.Canvas.Brush.Color:=clRed;
   Image1.Canvas.Brush.Style:=bsDiagCross;
   Image1.Canvas.FillRect(Image1.ClientRect);
