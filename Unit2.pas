@@ -301,6 +301,7 @@ begin
         end;
       end;
       br3.Free;
+      tex32.Free;
       bmp:=b;
       memfile.Seek(4, soCurrent);
       size := br.ReadUInt32;
