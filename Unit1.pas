@@ -213,16 +213,17 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-{$IFDEF DEBUG}
-  ReportMemoryLeaksOnShutdown:=True;
-  FileOpen1.Dialog.FileName:='mix1w';
-{$ENDIF}
   Image1.Canvas.Brush.Color:=clRed;
   Image1.Canvas.Brush.Style:=bsDiagCross;
   Image1.Canvas.FillRect(Image1.ClientRect);
   DragAcceptFiles(Self.Handle,True);
   Application.OnMessage:=HandleDrops;
-  Caption := Format('TR4 to PRJ  v%.1f',[program_version]);
+  Caption := Format('TR4 to PRJ  v%.2f',[program_version]);
+{$IFDEF DEBUG}
+  ReportMemoryLeaksOnShutdown:=True;
+  FileOpen1.Dialog.FileName:='mix1w';
+  Caption:=Caption+' DEBUG';
+{$ENDIF}
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);

@@ -523,6 +523,10 @@ begin
         p.Rooms[i].blocks[b].id := $1; // default is floor type
         p.Rooms[i].blocks[b].Floor := -sector.Floor;
         p.Rooms[i].blocks[b].ceiling := -sector.Ceiling;
+        for ii:=0 to 3 do
+        begin
+          p.Rooms[i].blocks[b].fdiv[ii]:= -Abs(p.Rooms[i].blocks[b].Floor);
+        end;
 
         // corner grey blocks can be any heights I guess since never seen
         // aktrekker makes them same as corner blocks of inner blocks
@@ -654,6 +658,10 @@ begin
                 p.Rooms[i].blocks[b].floorcorner[1]:=p.Rooms[i].blocks[b].floorcorner[1]+Abs(fd.addZ);
               end;
               p.Rooms[i].blocks[b].Floor := p.Rooms[i].blocks[b].Floor-(Abs(fd.addX)+abs(fd.addZ));
+              p.Rooms[i].blocks[b].fdiv[0]:= -Abs(p.Rooms[i].blocks[b].Floor);
+              p.Rooms[i].blocks[b].fdiv[1]:= -Abs(p.Rooms[i].blocks[b].Floor);
+              p.Rooms[i].blocks[b].fdiv[2]:= -Abs(p.Rooms[i].blocks[b].Floor);
+              p.Rooms[i].blocks[b].fdiv[3]:= -Abs(p.Rooms[i].blocks[b].Floor);
               Continue;
             end; // tilt
             if fd.tipo=roof then
