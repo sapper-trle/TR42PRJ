@@ -160,8 +160,8 @@ begin
     end
     else if fd.tipo in [split1..nocol8] then
     begin
-      fd.triHLo := (data and $03e0) shr 4;
-      fd.triHHi := (data and $7c00) shr 8;
+      fd.triHLo := (data and $03e0) shr 5;
+      fd.triHHi := (data and $7c00) shr 10;
       data := floordata[FDindex+k];
       Inc(k);
       fd.corners[0]:=data and $000f;
