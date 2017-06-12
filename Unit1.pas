@@ -53,7 +53,7 @@ type
     procedure UnloadPRJExecute(Sender: TObject);
   private
     { Private declarations }
-    const program_version = 0.71;
+    const program_version = 0.72;
   public
     { Public declarations }
     l: TTRLevel;
@@ -272,7 +272,7 @@ end;
 
 procedure TForm1.PopupMenu1Popup(Sender: TObject);
 begin
-  PopupMenu1.Items[0].Enabled:= Assigned(l);
+  PopupMenu1.Items[0].Enabled:= Assigned(l) and (l.bmp.Width>0) and (l.bmp.Height>0);
 end;
 
 procedure TForm1.SaveTGA1Click(Sender: TObject);
@@ -281,6 +281,7 @@ var
   s:string;
 begin
   if not Assigned(l) then Exit;
+  if (l.bmp.Width=0) or (l.bmp.Height=0) then Exit;
   if SaveDialog1.Execute then
   begin
     s:=SaveDialog1.FileName;
