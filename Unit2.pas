@@ -92,7 +92,7 @@ type
     constructor Create;
     destructor Destroy;override;
     function Load(filename: string;out gauge:TGauge): uint8;
-    function ConvertToPRJ(const filename:string;SaveTGA:Boolean=True): TTRProject;
+    function ConvertToPRJ(const filename:string;SaveTGA:Boolean=True;fixFDIVS:Boolean=True): TTRProject;
   end;
 
 implementation
@@ -462,11 +462,11 @@ begin
   Result := resultado;
 end;
 
-function TTRLevel.ConvertToPRJ(const filename :string;SaveTGA:Boolean=True): TTRProject;
+function TTRLevel.ConvertToPRJ(const filename :string;SaveTGA:Boolean=True;fixFDIVS:Boolean=True): TTRProject;
 var
   p:TTRProject;
   slots:uint32;
-  i,j,k,ii,jj,h1,h2:Integer;
+  i,j,k,ii,jj,temp:Integer;
   r1:TRoom;
   sector:TSector;
   s:string;
@@ -483,7 +483,7 @@ begin
   else if ((num_rooms>100) and (num_rooms<=200)) then slots:=200
   else slots := 300;
   p := TTRProject.Create(num_rooms,slots);
-  if SaveTGA then
+  if SaveTGA and (bmp.Width>0) and (bmp.Height>0) then
   begin
     s := ChangeFileExt(filename,'.tga');
     InitImage(img);
@@ -524,9 +524,21 @@ begin
         p.Rooms[i].blocks[b].id := $1; // default is floor type
         p.Rooms[i].blocks[b].Floor := -sector.Floor;
         p.Rooms[i].blocks[b].ceiling := -sector.Ceiling;
-        for ii:=0 to 3 do
+        if (p.Rooms[i].blocks[b].Floor<>127) and fixFDIVS then
         begin
-          p.Rooms[i].blocks[b].fdiv[ii]:= -Abs(p.Rooms[i].blocks[b].Floor);
+          for ii:=0 to 3 do
+          begin
+            temp:=-Abs(p.Rooms[i].blocks[b].Floor-(-r1.yBottom div 256));
+            p.Rooms[i].blocks[b].fdiv[ii]:= temp;
+          end;
+        end;
+        if (p.Rooms[i].blocks[b].ceiling<>127) and fixFDIVS then
+        begin
+          for ii:=0 to 3 do
+          begin
+            temp:=(-r1.yTop div 256)- p.Rooms[i].blocks[b].ceiling;
+            p.Rooms[i].blocks[b].cdiv[ii]:= Abs(temp);
+          end;
         end;
 
         // corner grey blocks can be any heights I guess since never seen
@@ -605,7 +617,8 @@ begin
                   p.Rooms[i].blocks[b].ceiling := -sector.Ceiling;
                 end;
               end;
-//              if p.Rooms[i].blocks[b].id = $1e then p.Rooms[i].blocks[b].id := $6
+//              else
+//                if p.Rooms[i].blocks[b].id = $1e then p.Rooms[i].blocks[b].id := $6;
               Continue;
             end;
             if fd.tipo=beetle then
@@ -659,10 +672,13 @@ begin
                 p.Rooms[i].blocks[b].floorcorner[1]:=p.Rooms[i].blocks[b].floorcorner[1]+Abs(fd.addZ);
               end;
               p.Rooms[i].blocks[b].Floor := p.Rooms[i].blocks[b].Floor-(Abs(fd.addX)+abs(fd.addZ));
-              p.Rooms[i].blocks[b].fdiv[0]:= -Abs(p.Rooms[i].blocks[b].Floor);
-              p.Rooms[i].blocks[b].fdiv[1]:= -Abs(p.Rooms[i].blocks[b].Floor);
-              p.Rooms[i].blocks[b].fdiv[2]:= -Abs(p.Rooms[i].blocks[b].Floor);
-              p.Rooms[i].blocks[b].fdiv[3]:= -Abs(p.Rooms[i].blocks[b].Floor);
+              if fixFDIVS then
+              begin
+                p.Rooms[i].blocks[b].fdiv[0]:= -Abs(p.Rooms[i].blocks[b].Floor-(-r1.yBottom div 256));
+                p.Rooms[i].blocks[b].fdiv[1]:= -Abs(p.Rooms[i].blocks[b].Floor-(-r1.yBottom div 256));
+                p.Rooms[i].blocks[b].fdiv[2]:= -Abs(p.Rooms[i].blocks[b].Floor-(-r1.yBottom div 256));
+                p.Rooms[i].blocks[b].fdiv[3]:= -Abs(p.Rooms[i].blocks[b].Floor-(-r1.yBottom div 256));
+              end;
               Continue;
             end; // tilt
             if fd.tipo=roof then
@@ -688,6 +704,13 @@ begin
                 p.Rooms[i].blocks[b].ceilcorner[3]:=p.Rooms[i].blocks[b].ceilcorner[3]+fd.addZ;
               end;
               p.Rooms[i].blocks[b].Ceiling := p.Rooms[i].blocks[b].ceiling+Abs(fd.addX)+abs(fd.addZ);
+              if fixFDIVS then
+              begin
+                p.Rooms[i].blocks[b].cdiv[0]:= Abs((-r1.yTop div 256)- p.Rooms[i].blocks[b].ceiling);
+                p.Rooms[i].blocks[b].cdiv[1]:= Abs((-r1.yTop div 256)- p.Rooms[i].blocks[b].ceiling);
+                p.Rooms[i].blocks[b].cdiv[2]:= Abs((-r1.yTop div 256)- p.Rooms[i].blocks[b].ceiling);
+                p.Rooms[i].blocks[b].cdiv[3]:= Abs((-r1.yTop div 256)- p.Rooms[i].blocks[b].ceiling);
+              end;
               Continue;
             end; // roof
             if fd.tipo in [split1,split2,nocol1..nocol4] then  // floor splits
@@ -703,16 +726,17 @@ begin
               a[3]:=fd.corners[3];
               maxCorner:=maxIntvalue(a);
               p.Rooms[i].blocks[b].Floor := p.Rooms[i].blocks[b].Floor-maxCorner;
-              if fd.tipo in [split2,nocol3,nocol4] then
+              if fd.tipo in [split2,nocol3,nocol4] then // function 8 splits
               begin
                 // if corners indicate opposite diagonal
-                //p.Rooms[i].blocks[b].flags3:=p.Rooms[i].blocks[b].flags3 or $1;
-                h1:=Max(a[0],Max(a[1],a[3]));
-                h2:=Max(a[1],Max(a[2],a[3]));
-                if fd.triHHi > Abs(h1-h2) then
-                begin
-//                  Dec(p.Rooms[i].blocks[b].Floor,4); //floor decreased by diff for corner ht > 15
-                end;
+                if (a[1]>Max(a[0],a[2])) or (a[3]>Max(a[0],a[2])) or (a[1]<Min(a[0],a[2])) or (a[3]<Min(a[0],a[2])) then
+                  p.Rooms[i].blocks[b].flags3:=p.Rooms[i].blocks[b].flags3 or $1;
+              end;
+              if fd.tipo in [split1,nocol1,nocol2] then // function 7 splits
+              begin
+                // if corners indicate opposite diagonal
+                if (a[0]>Max(a[1],a[3])) or (a[2]>Max(a[1],a[3])) or (a[0]<Min(a[1],a[3])) or (a[2]<Min(a[1],a[3])) then
+                  p.Rooms[i].blocks[b].flags3:=p.Rooms[i].blocks[b].flags3 or $1;
               end;
               Continue;
             end; //floor splits
