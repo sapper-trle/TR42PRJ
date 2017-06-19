@@ -3,6 +3,8 @@ A program for the Tomb Raider Level Editing (TRLE) community.
 
 Converts a Tomb Raider 4 .TR4 file to a TRLE project .prj file
 
+![Screenshot](./Screenshot.jpg)
+
 aktrekker's TR2PRJ program doesn't get the geometry correct especially for some split sectors.
 This is an attempt to do a better job.
 
