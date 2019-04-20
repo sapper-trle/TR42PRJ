@@ -23,12 +23,12 @@ Disadvantages:
 
 This is a Delphi XE7 project.
 
-Delphi 10.2 Starter Edition is currently available for free.
-https://www.embarcadero.com/products/delphi/starter/promotional-download
+Delphi 10 Community Edition is currently available for free.
+https://www.embarcadero.com/products/delphi/starter
 
 The Vampyre Imaging Library is required for .TGA support.
 Download and change the Search Path in the Project Options setting to location of Imaging Library.
-Use the version form the Mercurial repository since the latest release version does not compile with Delphi XE7.
+Use the version from the Mercurial repository since the latest release version does not compile with Delphi XE7.
 http://sourceforge.net/p/imaginglib/code/ci/default/tree/
 
 # Usage:
