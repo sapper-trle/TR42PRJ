@@ -219,6 +219,7 @@ var
   rd,gr,bl,al:UInt8;
   sectorFD:TList<TParsedFloorData>;
   file_size : Int64;
+  height : Integer;
 begin
   resultado := 0;
   gauge.Progress:=0;
@@ -298,6 +299,34 @@ begin
           col := col or (gr shl 8);
           col := col or rd;
           b.Canvas.Pixels[j,i]:= col;
+        end;
+      end;
+      if num_bump_textiles <> 0 then
+      begin
+        height := b.Height;
+        b.Height:= b.Height + ((num_bump_textiles div 2) * 256);
+        tex32.Seek(num_obj_textiles*256*256*4, soCurrent);
+        for i:=height to b.Height-1 do
+        begin
+          if i mod (256*2) = 0 then gauge.AddProgress(1);
+          for j := 0 to 255 do
+          begin
+            bl:=br3.ReadByte;
+            gr:=br3.ReadByte;
+            rd:=br3.ReadByte;
+            al:=br3.ReadByte;
+            if al=0 then   // make alpha pixels magenta
+            begin
+              bl:=255;
+              rd:=255;
+              gr:=0;
+            end;
+            col := 0;
+            col := col or (bl shl 16);
+            col := col or (gr shl 8);
+            col := col or rd;
+            b.Canvas.Pixels[j,i]:= col;
+          end;
         end;
       end;
       br3.Free;
