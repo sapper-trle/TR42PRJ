@@ -48,12 +48,23 @@ object Form1: TForm1
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 2
-    object Image1: TImage
-      Left = 13
-      Top = 10
-      Width = 256
-      Height = 256
-      PopupMenu = PopupMenu1
+    object ScrollBox1: TScrollBox
+      Left = 0
+      Top = 0
+      Width = 282
+      Height = 277
+      HorzScrollBar.Visible = False
+      Align = alClient
+      TabOrder = 0
+      OnMouseWheel = ScrollBox1MouseWheel
+      object Image1: TImage
+        Left = -2
+        Top = -2
+        Width = 256
+        Height = 256
+        AutoSize = True
+        PopupMenu = PopupMenu1
+      end
     end
   end
   object Button2: TButton

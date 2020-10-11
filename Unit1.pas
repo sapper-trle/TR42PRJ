@@ -37,6 +37,7 @@ type
     CheckBox1: TCheckBox;
     CheckBox2: TCheckBox;
     CheckBox3: TCheckBox;
+    ScrollBox1: TScrollBox;
     procedure FileOpen1Accept(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -51,6 +52,8 @@ type
     procedure PopupMenu1Popup(Sender: TObject);
     procedure UnloadPRJUpdate(Sender: TObject);
     procedure UnloadPRJExecute(Sender: TObject);
+    procedure ScrollBox1MouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
   private
     { Private declarations }
     const program_version = 0.72;
@@ -215,6 +218,7 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   Image1.Canvas.Brush.Color:=clRed;
   Image1.Canvas.Brush.Style:=bsDiagCross;
+  Image1.Picture.Bitmap.SetSize(256, 256);
   Image1.Canvas.FillRect(Image1.ClientRect);
   DragAcceptFiles(Self.Handle,True);
   Application.OnMessage:=HandleDrops;
@@ -291,6 +295,13 @@ begin
     SaveImageToFile(s,img);
     FreeImage(img);
   end;
+end;
+
+procedure TForm1.ScrollBox1MouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+  ScrollBox1.VertScrollBar.Position:= ScrollBox1.VertScrollBar.Position-wheeldelta;
+  Handled:=True;
 end;
 
 procedure TForm1.UnloadPRJExecute(Sender: TObject);
