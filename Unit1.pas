@@ -197,6 +197,7 @@ begin
   end;
   p.Save(FileSaveAs1.Dialog.FileName);
   p.Free;
+  ShowMessage('PRJ saved.');
 //  Halt(0);
 end;
 
