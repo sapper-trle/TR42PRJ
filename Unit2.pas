@@ -301,7 +301,7 @@ begin
           b.Canvas.Pixels[j,i]:= col;
         end;
       end;
-      if num_bump_textiles <> 0 then
+      if num_bump_textiles > 0 then
       begin
         height := b.Height;
         b.Height:= b.Height + ((num_bump_textiles div 2) * 256);
