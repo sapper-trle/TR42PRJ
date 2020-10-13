@@ -56,7 +56,7 @@ type
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
   private
     { Private declarations }
-    const program_version = 0.72;
+    const program_version = 0.73;
   public
     { Public declarations }
     l: TTRLevel;
@@ -226,7 +226,7 @@ begin
   Caption := Format('TR4 to PRJ  v%.2f',[program_version]);
 {$IFDEF DEBUG}
   ReportMemoryLeaksOnShutdown:=True;
-  FileOpen1.Dialog.FileName:='mix1w';
+  FileOpen1.Dialog.FileName:='karnak.tr4';
   Caption:=Caption+' DEBUG';
 {$ENDIF}
 end;

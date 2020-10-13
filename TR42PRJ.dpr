@@ -1,4 +1,4 @@
-program TRprj;
+program TR42PRJ;
 
 uses
   Vcl.Forms,
