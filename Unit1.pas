@@ -103,6 +103,7 @@ begin
         FreeAndNil(l);
         Image1.Picture.Bitmap.SetSize(256,256);
         Image1.Canvas.FillRect(Image1.ClientRect);
+        StatusBar1.Panels[0].Text:='';
         Exit;
       end;
     2:
@@ -111,6 +112,7 @@ begin
         Image1.Picture.Bitmap.SetSize(256,256);
         Image1.Canvas.FillRect(Image1.ClientRect);
         FreeAndNil(l);
+        StatusBar1.Panels[0].Text:='';
         Exit;
       end;
     3:
@@ -119,6 +121,7 @@ begin
         FreeAndNil(l);
         Image1.Picture.Bitmap.SetSize(256,256);
         Image1.Canvas.FillRect(Image1.ClientRect);
+        StatusBar1.Panels[0].Text:='';
         Exit;
       end;
     4:
@@ -127,10 +130,12 @@ begin
         FreeAndNil(l);
         Image1.Picture.Bitmap.SetSize(256,256);
         Image1.Canvas.FillRect(Image1.ClientRect);
+        StatusBar1.Panels[0].Text:='';
         Exit;
       end;
   end; //case
   Image1.Picture.Bitmap:=l.bmp;
+  StatusBar1.Panels[0].Text:=FileOpen1.Dialog.FileName;
 end;
 
 procedure TForm1.FileOpen2Accept(Sender: TObject);

@@ -30,7 +30,11 @@ object Form1: TForm1
     Top = 277
     Width = 463
     Height = 19
-    Panels = <>
+    Panels = <
+      item
+        Width = 50
+      end>
+    ExplicitTop = 272
   end
   object Button1: TButton
     Left = 296
