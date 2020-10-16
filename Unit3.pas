@@ -56,6 +56,11 @@ type
   end;
 
 type
+  TDoorHelper = record helper for TDoor
+    function SameDoor(other:TDoor):Boolean;
+  end;
+
+type
   TBlockTex = record
     tipo : uint16;
     index : UInt8;
@@ -912,6 +917,18 @@ begin
   Result:=True;
 end;
 
+
+{ TDoorHelper }
+
+function TDoorHelper.SameDoor(other: TDoor): Boolean;
+begin
+  if (Self.id = not(other.id))  and
+     (Self.xsize = other.xsize) and
+     (Self.zsize = other.zsize) and
+     (Self.room = other.filler[0]) //using filler[0] as door toRoom
+  then Result := True
+  else Result := False;
+end;
 
 end.
 

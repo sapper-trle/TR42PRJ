@@ -194,6 +194,7 @@ var
   p: TTRProject;
 begin
   p := l.ConvertToPRJ(FileSaveAs1.Dialog.FileName);
+  l.MakeDoors(p);
   if Assigned(aktrekker) and p.isCompatible(aktrekker) then
   begin
     if CheckBox1.Checked then p.CopyDoorsFromPRJ(aktrekker);

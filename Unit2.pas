@@ -93,6 +93,7 @@ type
     destructor Destroy;override;
     function Load(filename: string;out gauge:TGauge): uint8;
     function ConvertToPRJ(const filename:string;SaveTGA:Boolean=True;fixFDIVS:Boolean=True): TTRProject;
+    procedure MakeDoors(var p:TTRProject);
   end;
 
 implementation
@@ -790,6 +791,103 @@ begin
     end; // loop thru Z block rows
   end; // loop thru rooms
   Result := p;
+end;
+
+procedure TTRLevel.MakeDoors(var p: TTRProject);
+{TODO: ensure no duplicate portals.
+ aktrekker's TR2PRJ crashes making doors if duplicate portals}
+var
+  i, j, k : Integer;
+  minx, maxx, minz, maxz : Integer;
+  portal : TPortal;
+  r : TRoom;
+  d : TDoor;
+  doorcount : Integer;
+begin
+  doorcount := 0;
+  for i := 0 to High(rooms) do
+  begin
+    r := rooms[i];
+    p.Rooms[i].numdoors := r.num_portals;
+    SetLength(p.Rooms[i].doors, r.num_portals);
+    SetLength(p.Rooms[i].doorthingindex, r.num_portals);
+    for j := Low(r.Portals) to High(r.Portals) do
+    begin
+      portal := r.Portals[j];
+      minx := portal.vertices[0].x;
+      maxx := minx;
+      minz := portal.vertices[0].z;
+      maxz := minz;
+      for k := 1 to 3 do
+      begin
+        if portal.vertices[k].x < minx then minx := portal.vertices[k].x;
+        if portal.vertices[k].x > maxx then maxx := portal.vertices[k].x;
+        if portal.vertices[k].z < minz then minz := portal.vertices[k].z;
+        if portal.vertices[k].z > maxz then maxz := portal.vertices[k].z;
+      end;
+      d.room := i;
+      d.filler[0] := portal.toRoom;
+      d.slot := doorcount;
+      p.Rooms[i].doorthingindex[j] := doorcount;
+      // north   //for room mesh though z east/west and x north/south opposite of room edit
+      if portal.normal.x = 1 then
+      begin
+        d.id := 2;
+        d.zpos := 0;
+        d.zsize := 1;
+        d.xpos := minz div 1024;
+        d.xsize := (maxz - minz) div 1024;
+      end;
+      // south
+      if portal.normal.x = -1 then
+      begin
+        d.id := $fffd;
+        d.zpos := minx div 1024;
+        d.zsize := 1;
+        d.xpos := minz div 1024;
+        d.xsize := (maxz - minz) div 1024;
+      end;
+      // west
+      if portal.normal.z = 1 then
+      begin
+        d.id := 1;
+        d.xpos := 0;
+        d.xsize := 1;
+        d.zpos := minx div 1024;
+        d.zsize := (maxx - minx) div 1024;
+      end;
+      // east
+      if portal.normal.z = -1 then
+      begin
+        d.id := $fffe;
+        d.xpos := minz div 1024;
+        d.xsize := 1;
+        d.zpos := minx div 1024;
+        d.zsize := (maxx - minx) div 1024;
+      end;
+      // pit
+      if portal.normal.y = -1 then
+      begin
+        d.id := 4;
+        d.xpos := minz div 1024;
+        d.xsize := (maxz - minz) div 1024;
+        d.zpos := minx div 1024;
+        d.zsize := (maxx - minx) div 1024;
+      end;
+      // sky
+      if portal.normal.y = 1 then
+      begin
+        d.id := $fffb;
+        d.xpos := minz div 1024;
+        d.xsize := (maxz - minz) div 1024;
+        d.zpos := minx div 1024;
+        d.zsize := (maxx - minx) div 1024;
+      end;
+    Inc(doorcount);
+    p.Rooms[i].doors[j] := d;
+    end;
+    //Break
+  end;
 end;
 
 end.
