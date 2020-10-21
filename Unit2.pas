@@ -54,6 +54,11 @@ type
   end;
 
 type
+  TPortalHelper = record helper for TPortal
+    function Adjoins(other:TPortal; x,z,x1,z1:Int32):Boolean;
+  end;
+
+type
   TRoomColour = packed record
     b,g,r,a : UInt8;
   end;
@@ -597,15 +602,15 @@ begin
         // black door blocks - no good without door arrays implemented
         else if (sector.RoomBelow<>255) and (sector.RoomAbove<>255) then
         begin
-//          p.Rooms[i].blocks[b].id := $7;
+          p.Rooms[i].blocks[b].id := $7;
         end
         else if (sector.RoomBelow<>255) then
         begin
-//          p.Rooms[i].blocks[b].id := $3;
+          p.Rooms[i].blocks[b].id := $3;
         end
         else if (sector.RoomAbove<>255) then
         begin
-//          p.Rooms[i].blocks[b].id := $5;
+          p.Rooms[i].blocks[b].id := $5;
         end;
 
         bx:=(sector.BoxIndex and $7FF0) shr 4;
@@ -646,9 +651,9 @@ begin
                   p.Rooms[i].blocks[b].Floor := -sector.Floor;
                   p.Rooms[i].blocks[b].ceiling := -sector.Ceiling;
                 end;
-              end;
-//              else
-//                if p.Rooms[i].blocks[b].id = $1e then p.Rooms[i].blocks[b].id := $6;
+              end
+              else
+                if p.Rooms[i].blocks[b].id = $1e then p.Rooms[i].blocks[b].id := $6;
               Continue;
             end;
             if fd.tipo=beetle then
@@ -797,11 +802,11 @@ procedure TTRLevel.MakeDoors(var p: TTRProject);
 {TODO: ensure no duplicate portals.
  aktrekker's TR2PRJ crashes making doors if duplicate portals}
 var
-  i, j, k : Integer;
+  i, j, k, room : Integer;
   minx, maxx, minz, maxz : Integer;
   portal : TPortal;
   r : TRoom;
-  d : TDoor;
+  d, dd : TDoor;
   doorcount : Integer;
 begin
   doorcount := 0;
@@ -811,6 +816,14 @@ begin
     p.Rooms[i].numdoors := r.num_portals;
     SetLength(p.Rooms[i].doors, r.num_portals);
     SetLength(p.Rooms[i].doorthingindex, r.num_portals);
+    case i of
+      0:p.Rooms[i].link:=4;
+      4:p.Rooms[i].link:=5;
+      5:p.Rooms[i].link:=1;
+      1:p.Rooms[i].link:=3;
+      3:p.Rooms[i].link:=2;
+      2:p.Rooms[i].link:=0;
+    end;
     for j := Low(r.Portals) to High(r.Portals) do
     begin
       portal := r.Portals[j];
@@ -826,7 +839,9 @@ begin
         if portal.vertices[k].z > maxz then maxz := portal.vertices[k].z;
       end;
       d.room := i;
+      d.yclickabovefloor := 0;
       d.filler[0] := portal.toRoom;
+      //if j = 0 then p.rooms[i].link := portal.toRoom;
       d.slot := doorcount;
       p.Rooms[i].doorthingindex[j] := doorcount;
       // north   //for room mesh though z east/west and x north/south opposite of room edit
@@ -883,11 +898,89 @@ begin
         d.zpos := minx div 1024;
         d.zsize := (maxx - minx) div 1024;
       end;
-    Inc(doorcount);
-    p.Rooms[i].doors[j] := d;
+      Inc(doorcount);
+      p.Rooms[i].doors[j] := d;
     end;
-    //Break
+
   end;
+
+  for i := 0 to High(rooms) do
+  begin
+    for j := 0 to High(rooms[i].Portals) do
+    begin
+      d := p.Rooms[i].doors[j];
+      room := d.filler[0];
+      for k := 0 to High(rooms[room].Portals) do
+      begin
+        if rooms[room].Portals[k].Adjoins(rooms[i].Portals[j],rooms[room].z,rooms[room].x,rooms[i].z,rooms[i].x) then
+        begin
+          p.Rooms[i].doors[j].slot := p.Rooms[room].doorthingindex[k];
+          Break;
+        end;
+      end;
+    end;
+  end;
+end;
+
+function TPortalHelper.Adjoins(other: TPortal;x,z,x1,z1:Int32):Boolean;
+var
+  i : Integer;
+  v, v1 : TVertex;
+  minx,miny,minz,maxx,maxy,maxz : Integer;
+  minx1,miny1,minz1,maxx1,maxy1,maxz1 : Integer;
+begin
+  if (Self.normal.x = -other.normal.x) and
+     (Self.normal.y = -other.normal.y) and
+     (Self.normal.z = -other.normal.z)
+  then Result := True
+  else Result := False;
+  if Result = False then Exit;
+
+  v := Self.vertices[0];
+  v1 := other.vertices[0];
+  minx := v.x; miny := v.y; minz := v.z;
+  maxx := v.x; maxy := v.y; maxz := v.z;
+
+  minx1 := v1.x; miny1 := v1.y; minz1 := v1.z;
+  maxx1 := v1.x; maxy1 := v1.y; maxz1 := v1.z;
+
+  // maybe should use trect instead
+
+  for i := 1 to 3 do
+  begin
+    v := Self.vertices[i];
+    v1 := other.vertices[i];
+    if v.x < minx then minx := v.x;
+    if v.y < miny then miny := v.y;
+    if v.z < minz then minz := v.z;
+
+    if v.x > maxx then maxx := v.x;
+    if v.y > maxy then maxy := v.y;
+    if v.z > maxz then maxz := v.z;
+
+    if v1.x < minx1 then minx1 := v1.x;
+    if v1.y < miny1 then miny1 := v1.y;
+    if v1.z < minz1 then minz1 := v1.z;
+
+    if v1.x > maxx1 then maxx1 := v1.x;
+    if v1.y > maxy1 then maxy1 := v1.y;
+    if v1.z > maxz1 then maxz1 := v1.z;
+  end;
+  // need to use absolute coordinates for x, z!!!!
+  minx := minx + x; maxx := maxx + x;
+  minz := minz + z; maxz := maxz + z;
+
+  minx1 := minx1 + x1; maxx1 := maxx1 + x1;
+  minz1 := minz1 + z1; maxz1 := maxz1 + z1;
+
+
+  if Self.normal.z <> 0 then Result := (minx = minx1) and (miny = miny1) and
+                             (maxx = maxx1) and (maxy = maxy1);
+  if Self.normal.x <> 0 then Result := (miny = miny1) and (minz = minz1) and
+                             (maxy = maxy1) and (maxz = maxz1);
+  if Self.normal.y <> 0 then Result := (minx = minx1) and (minz = minz1) and
+                             (maxx = maxx1) and (maxz = maxz1);
+
 end;
 
 end.
