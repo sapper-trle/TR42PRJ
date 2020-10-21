@@ -192,6 +192,7 @@ end;
 procedure TForm1.FileSaveAs1Accept(Sender: TObject);
 var
   p: TTRProject;
+  s : string;
 begin
   p := l.ConvertToPRJ(FileSaveAs1.Dialog.FileName);
   l.MakeDoors(p);
@@ -203,7 +204,8 @@ begin
   end;
   p.Save(FileSaveAs1.Dialog.FileName);
   p.Free;
-  ShowMessage('PRJ saved.');
+  s := ExtractFileName(filesaveas1.dialog.filename);
+  MessageDlg(Format('%s saved.',[s]), mtInformation,[mbOK],0);
 //  Halt(0);
 end;
 
