@@ -54,8 +54,12 @@ type
   end;
 
 type
+  TPortalArray = array of TPortal;
+
+type
   TPortalHelper = record helper for TPortal
     function Adjoins(other:TPortal; x,z,x1,z1:Int32):Boolean;
+    function Equals(other:TPortal):Boolean;
   end;
 
 type
@@ -69,7 +73,7 @@ type
     numZ,numX : UInt16;
     Sectors:array of TSector;
     num_portals : UInt16;
-    Portals:array of TPortal;
+    Portals: TPortalArray; //array of TPortal;
     colour : TRoomColour;
     altroom : Int16;
     flags:UInt16;
@@ -804,11 +808,11 @@ begin
 end;
 
 procedure TTRLevel.MakeDoors(var p: TTRProject);
-{ TODO: calculate room link value - how aktrekker do it???? }
 var
   i, j, k, room : Integer;
   minx, maxx, minz, maxz : Integer;
   portal : TPortal;
+  portalarray : TPortalArray; //array of TPortal;
   r : TRoom;
   d, dd : TDoor;
   doorcount : Integer;
@@ -822,9 +826,37 @@ begin
   for i := 0 to High(rooms) do
   begin
     r := rooms[i];
+    SetLength(portalarray, 0);
+    for j := 0 to (r.num_portals-1)-1 do
+    begin
+      k := j+1;
+      found := False;
+      while (k <= (r.num_portals-1)) and (found = False) do
+      begin
+        if r.Portals[j].Equals(r.Portals[k]) then
+          found := True
+        else
+          inc(k);
+      end;
+      if not found then
+      begin
+        SetLength(portalarray, length(portalarray)+1);
+        portalarray[High(portalarray)] := r.Portals[j];
+      end;
+    end; // loop thru portals
+    SetLength(portalarray, length(portalarray)+1);
+    portalarray[High(portalarray)] := r.Portals[r.num_portals-1];
+    if Length(portalarray) < Length(r.Portals) then
+    begin
+{$IFDEF DEBUG}
+      MessageDlg(Format('Room %d - duplicate portal removed',[i]), mtWarning,[mbOK],0);
+{$ENDIF}
+      rooms[i].num_portals := Length(portalarray);
+      rooms[i].Portals := portalarray;
+    end;
+  end; // loop thru rooms
 
-  end;
-
+  // make doors
   doorcount := 0;
   for i := 0 to High(rooms) do
   begin
@@ -849,6 +881,7 @@ begin
       end;
       d.room := i;
       d.yclickabovefloor := 0;
+      FillChar(d.filler,SizeOf(d.filler),0);
       d.filler[0] := portal.toRoom; // use filler[0] as toRoom temporarily
       p.Rooms[i].doorthingindex[j] := doorcount;
       // north   //for room mesh though z east/west and x north/south opposite of room edit
@@ -861,7 +894,7 @@ begin
         d.xsize := (maxz - minz) div 1024;
       end;
       // south
-      if portal.normal.x = -1 then              //TODO: check no non door blocks included see karnak
+      if portal.normal.x = -1 then         //TODO: check no non door blocks included see karnak
       begin
         d.id := $fffd;
         d.zpos := minx div 1024;
@@ -961,10 +994,10 @@ begin
           Break;
         end;
       end;
-      FillChar(d.filler,SizeOf(d.filler),0);
     end;
   end;
 
+{ TODO: calculate room link value - how aktrekker do it???? }
   // hardcode links for test level
   for i := 0 to High(p.Rooms) do
   begin
@@ -1038,6 +1071,54 @@ begin
   if Self.normal.y <> 0 then Result := (minx = minx1) and (minz = minz1) and
                              (maxx = maxx1) and (maxz = maxz1);
 
+end;
+
+function TPortalHelper.Equals(other: TPortal): Boolean;
+var
+  i : Integer;
+  v, v1 : TVertex;
+  minx,miny,minz,maxx,maxy,maxz : Integer;
+  minx1,miny1,minz1,maxx1,maxy1,maxz1 : Integer;
+begin
+  if (Self.normal.x = other.normal.x) and
+     (Self.normal.y = other.normal.y) and
+     (Self.normal.z = other.normal.z) and
+     (Self.toRoom = other.toRoom)
+  then Result := True
+  else Result := False;
+  if Result = False then Exit;
+
+  v := Self.vertices[0];
+  v1 := other.vertices[0];
+  minx := v.x; miny := v.y; minz := v.z;
+  maxx := v.x; maxy := v.y; maxz := v.z;
+
+  minx1 := v1.x; miny1 := v1.y; minz1 := v1.z;
+  maxx1 := v1.x; maxy1 := v1.y; maxz1 := v1.z;
+
+  for i := 1 to 3 do
+  begin
+    v := Self.vertices[i];
+    v1 := other.vertices[i];
+    if v.x < minx then minx := v.x;
+    if v.y < miny then miny := v.y;
+    if v.z < minz then minz := v.z;
+
+    if v.x > maxx then maxx := v.x;
+    if v.y > maxy then maxy := v.y;
+    if v.z > maxz then maxz := v.z;
+
+    if v1.x < minx1 then minx1 := v1.x;
+    if v1.y < miny1 then miny1 := v1.y;
+    if v1.z < minz1 then minz1 := v1.z;
+
+    if v1.x > maxx1 then maxx1 := v1.x;
+    if v1.y > maxy1 then maxy1 := v1.y;
+    if v1.z > maxz1 then maxz1 := v1.z;
+  end;
+
+  Result := (minx = minx1) and (miny = miny1) and (minz = minz1) and
+            (maxx = maxx1) and (maxy = maxy1) and (maxz = maxz1);
 end;
 
 end.
