@@ -6,6 +6,9 @@ uses
   System.Classes; //TMemoryStream, TBinaryWriter
 
 type
+  TWords = array of Word;
+
+type
   TColor4 = packed record
     r,g,b,a : UInt8;
   end;
@@ -58,6 +61,8 @@ type
 type
   TDoorHelper = record helper for TDoor
     function SameDoor(other:TDoor):Boolean;
+    function GetBlockIndices(roomx:Integer) : TWords;
+    function GetAdjacentBlockIndices(roomx:Integer) :TWords;
   end;
 
 type
@@ -919,6 +924,68 @@ end;
 
 
 { TDoorHelper }
+
+function TDoorHelper.GetAdjacentBlockIndices(roomx: Integer): TWords;
+var
+  i : Integer;
+begin
+  Result := GetBlockIndices(roomx);
+  if Self.id = 1 then
+  begin
+    for i := 0 to High(Result) do
+      Result[i] := Result[i]+1;
+  end;
+  if Self.id = $fffe then
+  begin
+    for i := 0 to High(Result) do
+      Result[i] := Result[i] - 1;
+  end;
+  if Self.id = 2 then
+  begin
+    for i := 0 to High(Result) do
+      Result[i] := Result[i] + roomx;
+  end;
+  if Self.id = $fffd then
+  begin
+    for i := 0 to High(Result) do
+      Result[i] := Result[i] - roomx;
+  end;
+end;
+
+function TDoorHelper.GetBlockIndices(roomx:Integer): TWords;
+var
+  i : Integer;
+begin
+  // west
+  if Self.id = 1 then
+  begin
+    SetLength(Result, self.zsize);
+    for i := 0 to High(Result) do
+      Result[i] := (Self.zpos*roomx) + (i * roomx);
+  end;
+  // east
+  if Self.id = $fffe then
+  begin
+    SetLength(Result, self.zsize);
+    for i := 0 to High(Result) do
+      Result[i] := ((Self.zpos+1)*roomx -1) + (i * roomx)
+  end;
+  // north
+  if Self.id = 2 then
+  begin
+    SetLength(Result, self.xsize);
+    for i := 0 to High(Result) do
+      Result[i] := Self.xpos + i;
+  end;
+  // south
+  if Self.id = $fffd then
+  begin
+    SetLength(Result, self.xsize);
+    for i := 0 to High(Result) do
+      Result[i] := (roomx * Self.zpos) + Self.xpos + i;
+  end;
+
+end;
 
 function TDoorHelper.SameDoor(other: TDoor): Boolean;
 begin

@@ -626,7 +626,7 @@ begin
           begin
             fd:=sector.floorInfo[ii];
             if fd.tipo in [trigger] then Continue; // not implemented
-            if fd.tipo = door then  // not implemented
+            if fd.tipo = door then
             begin
               isHorizontalDoor:=True;
               for jj := 0 to High(r1.Portals) do
@@ -653,7 +653,12 @@ begin
                 end;
               end
               else
-                if p.Rooms[i].blocks[b].id = $1e then p.Rooms[i].blocks[b].id := $6;
+                if p.Rooms[i].blocks[b].id = $1e then
+                begin
+                  p.Rooms[i].blocks[b].id := $6;
+                  p.Rooms[i].blocks[b].Floor := -sector.Floor; // these values wrong
+                  p.Rooms[i].blocks[b].ceiling := -sector.Ceiling; // fixed later
+                end;
               Continue;
             end;
             if fd.tipo=beetle then
@@ -799,8 +804,7 @@ begin
 end;
 
 procedure TTRLevel.MakeDoors(var p: TTRProject);
-{TODO: ensure no duplicate portals.
- aktrekker's TR2PRJ crashes making doors if duplicate portals}
+{ TODO: calculate room link value - how aktrekker do it???? }
 var
   i, j, k, room : Integer;
   minx, maxx, minz, maxz : Integer;
@@ -808,7 +812,19 @@ var
   r : TRoom;
   d, dd : TDoor;
   doorcount : Integer;
+  bloks, bloks2 : TWords;
+  found:Boolean;
 begin
+  // Uses aktrekker's method of using portals to determine doors
+  // But aktrekker's TR2PRJ crashes making doors if duplicate portals - see aldwych level
+  // so check first for duplicate portals
+
+  for i := 0 to High(rooms) do
+  begin
+    r := rooms[i];
+
+  end;
+
   doorcount := 0;
   for i := 0 to High(rooms) do
   begin
@@ -816,14 +832,7 @@ begin
     p.Rooms[i].numdoors := r.num_portals;
     SetLength(p.Rooms[i].doors, r.num_portals);
     SetLength(p.Rooms[i].doorthingindex, r.num_portals);
-    case i of
-      0:p.Rooms[i].link:=4;
-      4:p.Rooms[i].link:=5;
-      5:p.Rooms[i].link:=1;
-      1:p.Rooms[i].link:=3;
-      3:p.Rooms[i].link:=2;
-      2:p.Rooms[i].link:=0;
-    end;
+
     for j := Low(r.Portals) to High(r.Portals) do
     begin
       portal := r.Portals[j];
@@ -840,9 +849,7 @@ begin
       end;
       d.room := i;
       d.yclickabovefloor := 0;
-      d.filler[0] := portal.toRoom;
-      //if j = 0 then p.rooms[i].link := portal.toRoom;
-      d.slot := doorcount;
+      d.filler[0] := portal.toRoom; // use filler[0] as toRoom temporarily
       p.Rooms[i].doorthingindex[j] := doorcount;
       // north   //for room mesh though z east/west and x north/south opposite of room edit
       if portal.normal.x = 1 then
@@ -854,7 +861,7 @@ begin
         d.xsize := (maxz - minz) div 1024;
       end;
       // south
-      if portal.normal.x = -1 then
+      if portal.normal.x = -1 then              //TODO: check no non door blocks included see karnak
       begin
         d.id := $fffd;
         d.zpos := minx div 1024;
@@ -900,10 +907,46 @@ begin
       end;
       Inc(doorcount);
       p.Rooms[i].doors[j] := d;
-    end;
+    end;  // loop thru portals
+  end; //loop thru rooms
 
+  // fix floor and ceiling values for wall door blocks
+  // the values used for door blocks must be the same as the
+  // corresponding floor blocks in the other room which are
+  // adjacent to the door in the other room
+  // e.g.
+  // floor adjacent room0   |s1|s2|s3|s4|
+  // south door room0       |n1|n2|n3|n4|
+  // north door room1       |s1|s2|s3|s4|
+  // floor adjacent room1   |n1|n2|n3|n4|
+
+  for i := 0 to High(p.Rooms) do
+  begin
+    for j := 0 to High(p.Rooms[i].doors) do
+    begin
+      d := p.Rooms[i].doors[j];
+      // exclude sky or pit doors
+      if (d.id = 4) or (d.id = $fffb) then Continue;
+      bloks := d.GetBlockIndices(p.Rooms[i].xsize);
+      for k := 0 to High(p.Rooms[d.filler[0]].doors) do
+      begin
+        dd := p.Rooms[d.filler[0]].doors[k];
+        found := d.SameDoor(dd);
+        if found then Break;
+      end;
+      if not found then Continue;
+      bloks2 := dd.GetAdjacentBlockIndices(p.Rooms[dd.room].xsize);
+      if Length(bloks) <> Length(bloks2) then Continue;
+      for k := 0 to High(bloks) do
+      begin
+//        if p.Rooms[i].blocks[bloks[k]].id <> 6 then Continue;
+        p.Rooms[i].blocks[bloks[k]].Floor := p.Rooms[dd.room].blocks[bloks2[k]].Floor;
+        p.Rooms[i].blocks[bloks[k]].ceiling := p.Rooms[dd.room].blocks[bloks2[k]].ceiling;
+      end;
+    end;
   end;
 
+  // determine slot value
   for i := 0 to High(rooms) do
   begin
     for j := 0 to High(rooms[i].Portals) do
@@ -918,6 +961,20 @@ begin
           Break;
         end;
       end;
+      FillChar(d.filler,SizeOf(d.filler),0);
+    end;
+  end;
+
+  // hardcode links for test level
+  for i := 0 to High(p.Rooms) do
+  begin
+    case i of
+      0:p.Rooms[i].link:=4;
+      4:p.Rooms[i].link:=5;
+      5:p.Rooms[i].link:=1;
+      1:p.Rooms[i].link:=3;
+      3:p.Rooms[i].link:=2;
+      2:p.Rooms[i].link:=0;
     end;
   end;
 end;
