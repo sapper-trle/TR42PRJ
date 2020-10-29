@@ -955,6 +955,7 @@ begin
 
   for i := 0 to High(p.Rooms) do
   begin
+    if p.Rooms[i].id = 1 then Continue;
     for j := 0 to High(p.Rooms[i].doors) do
     begin
       d := p.Rooms[i].doors[j];
@@ -1001,14 +1002,22 @@ begin
   // hardcode links for test level
   for i := 0 to High(p.Rooms) do
   begin
-    case i of
-      0:p.Rooms[i].link:=4;
-      4:p.Rooms[i].link:=5;
-      5:p.Rooms[i].link:=1;
-      1:p.Rooms[i].link:=3;
-      3:p.Rooms[i].link:=2;
-      2:p.Rooms[i].link:=0;
-    end;
+    if p.Rooms[i].id = 1 then Continue;
+    // making link = room number works (ngle doesn't freeze) but each room separate
+    // noticed that if ngle needs to repair map it automatically fixes links
+//    p.Rooms[i].link := word(-1); //this creates errors that are auto repaired but lots of error msgs
+//    P.Rooms[i].link := 0; //freezes ngle
+      p.Rooms[i].link := $ffff;
+(*
+      case i of
+        0:p.Rooms[i].link:=4;
+        4:p.Rooms[i].link:=5;
+        5:p.Rooms[i].link:=1;
+        1:p.Rooms[i].link:=3;
+        3:p.Rooms[i].link:=2;
+        2:p.Rooms[i].link:=0;
+      end;
+*)
   end;
 end;
 
