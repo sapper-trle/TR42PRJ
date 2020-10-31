@@ -826,6 +826,7 @@ begin
   for i := 0 to High(rooms) do
   begin
     r := rooms[i];
+    if r.num_portals = 0 then Continue;
     SetLength(portalarray, 0);
     for j := 0 to (r.num_portals-1)-1 do
     begin
