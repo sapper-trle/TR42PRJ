@@ -1000,7 +1000,6 @@ begin
   end;
 
 { TODO: calculate room link value - how aktrekker do it???? }
-  // hardcode links for test level
   for i := 0 to High(p.Rooms) do
   begin
     if p.Rooms[i].id = 1 then Continue;
@@ -1010,6 +1009,7 @@ begin
 //    P.Rooms[i].link := 0; //freezes ngle
       p.Rooms[i].link := $ffff;
 (*
+  // hardcode links for test level
       case i of
         0:p.Rooms[i].link:=4;
         4:p.Rooms[i].link:=5;
