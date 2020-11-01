@@ -34,7 +34,6 @@ object Form1: TForm1
       item
         Width = 50
       end>
-    ExplicitTop = 272
   end
   object Button1: TButton
     Left = 296
@@ -176,6 +175,13 @@ object Form1: TForm1
       end
       object Exit1: TMenuItem
         Action = FileExit1
+      end
+    end
+    object Options1: TMenuItem
+      Caption = '&Options'
+      object TR2PRJlinks: TMenuItem
+        AutoCheck = True
+        Caption = '&TR2PRJ links'
       end
     end
   end

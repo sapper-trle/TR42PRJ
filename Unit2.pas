@@ -102,13 +102,13 @@ type
     destructor Destroy;override;
     function Load(filename: string;out gauge:TGauge): uint8;
     function ConvertToPRJ(const filename:string;SaveTGA:Boolean=True;fixFDIVS:Boolean=True): TTRProject;
-    procedure MakeDoors(var p:TTRProject);
+    procedure MakeDoors(var p:TTRProject; tr2prjlinks:Boolean);
   end;
 
 implementation
 
 uses
-  System.SysUtils, Vcl.Dialogs,
+  System.SysUtils, Vcl.Dialogs, System.UITypes,
   System.Classes, //TMemoryStream, TBinaryReader
   System.ZLib, // ZDecompressStream() - decompress TR4 data
   Imaging, ImagingTypes, ImagingComponents, // Vampyre Imaging Library for .TGA support
@@ -805,11 +805,14 @@ begin
     end; // loop thru Z block rows
   end; // loop thru rooms
   Result := p;
+
+  { todo: REHome demo level produces block.floor = 127 causes display problem.
+  Floor in tr4 is -126}
 end;
 
-procedure TTRLevel.MakeDoors(var p: TTRProject);
+procedure TTRLevel.MakeDoors(var p: TTRProject; tr2prjlinks:Boolean);
 var
-  i, j, k, room : Integer;
+  i, j, k, room, previous_room, firstroom : Integer;
   minx, maxx, minz, maxz : Integer;
   portal : TPortal;
   portalarray : TPortalArray; //array of TPortal;
@@ -820,9 +823,9 @@ var
   found:Boolean;
 begin
   // Uses aktrekker's method of using portals to determine doors
-  // But aktrekker's TR2PRJ crashes making doors if duplicate portals - see aldwych level
-  // so check first for duplicate portals
 
+  // aktrekker's TR2PRJ crashes making doors if duplicate portals - see aldwych level
+  // so check and remove duplicate portals if any
   for i := 0 to High(rooms) do
   begin
     r := rooms[i];
@@ -999,26 +1002,30 @@ begin
     end;
   end;
 
-{ TODO: calculate room link value - how aktrekker do it???? }
-  for i := 0 to High(p.Rooms) do
+  // calculate room link value
+  // making link = room number works (ngle doesn't freeze) but each room separate
+  // Note: prj constructor sets link to room number
+  // noticed that if ngle needs to repair map it automatically fixes links
+  // set one link incorrect ($ffff) forces ngle to issue error msg and fix all links
+  p.Rooms[0].link := $ffff;
+
+  // aktrekker's method for reference
+  if tr2prjlinks then
   begin
-    if p.Rooms[i].id = 1 then Continue;
-    // making link = room number works (ngle doesn't freeze) but each room separate
-    // noticed that if ngle needs to repair map it automatically fixes links
-//    p.Rooms[i].link := word(-1); //this creates errors that are auto repaired but lots of error msgs
-//    P.Rooms[i].link := 0; //freezes ngle
-      p.Rooms[i].link := $ffff;
-(*
-  // hardcode links for test level
-      case i of
-        0:p.Rooms[i].link:=4;
-        4:p.Rooms[i].link:=5;
-        5:p.Rooms[i].link:=1;
-        1:p.Rooms[i].link:=3;
-        3:p.Rooms[i].link:=2;
-        2:p.Rooms[i].link:=0;
+    previous_room := -1;
+    for i := 0 to High(p.Rooms) do
+    begin
+      if p.Rooms[i].id = 1 then Break;
+      p.Rooms[i].link := 0; // aktrekker initialises all links to 0
+      if p.Rooms[i].numdoors = 0 then p.Rooms[i].link := i
+      else
+      begin
+        if previous_room >= 0 then p.Rooms[previous_room].link := i
+        else firstroom := i;
+        previous_room := i;
       end;
-*)
+    end;
+    if previous_room >= 0 then p.Rooms[previous_room].link := firstroom;
   end;
 end;
 

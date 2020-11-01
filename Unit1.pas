@@ -38,6 +38,8 @@ type
     CheckBox2: TCheckBox;
     CheckBox3: TCheckBox;
     ScrollBox1: TScrollBox;
+    Options1: TMenuItem;
+    TR2PRJlinks: TMenuItem;
     procedure FileOpen1Accept(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -195,7 +197,7 @@ var
   s : string;
 begin
   p := l.ConvertToPRJ(FileSaveAs1.Dialog.FileName);
-  l.MakeDoors(p);
+  l.MakeDoors(p,TR2PRJlinks.Checked);
   if Assigned(aktrekker) and p.isCompatible(aktrekker) then
   begin
     if CheckBox1.Checked then p.CopyDoorsFromPRJ(aktrekker);
