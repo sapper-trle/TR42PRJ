@@ -1025,6 +1025,7 @@ begin
         previous_room := i;
       end;
     end;
+    // last room links to first room with portals to complete "circle" of links
     if previous_room >= 0 then p.Rooms[previous_room].link := firstroom;
   end;
 end;
