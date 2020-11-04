@@ -78,6 +78,8 @@ type
     altroom : Int16;
     flags:UInt16;
     waterscheme,reverb,altgroup:UInt8;
+    isFlipRoom : Boolean; // extra fields for convenience
+    fliproom : Int16;
   end;
 
 
@@ -404,6 +406,8 @@ begin
         r.waterscheme := br2.ReadByte;
         r.reverb := br2.ReadByte;
         r.altgroup := br2.ReadByte;
+        r.isFlipRoom := False;
+        r.fliproom := -1;
         rooms[i] := r;
       end;
       gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
@@ -496,6 +500,12 @@ begin
         parseFloorData(rooms[i].Sectors[j].FDindex,sectorFD);
         rooms[i].Sectors[j].floorInfo:=sectorFD;
       end;
+      if rooms[i].altroom <> -1 then
+        if rooms[i].altroom <= High(rooms) then
+        begin
+          rooms[rooms[i].altroom].isFlipRoom := True;
+          rooms[rooms[i].altroom].FlipRoom := i;
+        end;
     end;
   end;
   Result := resultado;
@@ -538,6 +548,7 @@ begin
   for i:=0 to High(rooms) do
   begin
     r1:=rooms[i];
+    if r1.isFlipRoom then StrPCopy(p.Rooms[i].name, Format('Flipped Room%d',[r1.fliproom]));
     p.Rooms[i].x := r1.x;
 //    p.Rooms[i].y := r1.yBottom;
     p.Rooms[i].z := r1.z;
@@ -942,10 +953,13 @@ begin
         d.zpos := minx div 1024;
         d.zsize := (maxx - minx) div 1024;
       end;
-      Inc(doorcount);
+      if not r.isFlipRoom then Inc(doorcount); // need to correct doorindex for flipped rooms later
       p.Rooms[i].doors[j] := d;
     end;  // loop thru portals
   end; //loop thru rooms
+
+  // update number of things
+  p.NumThings := doorcount;
 
   // fix floor and ceiling values for wall door blocks
   // the values used for door blocks must be the same as the
@@ -972,6 +986,7 @@ begin
         found := d.SameDoor(dd);
         if found then Break;
       end;
+      // toggle opacity 1 or is it 2 have no matching door in tr4.
       if not found then Continue;
       bloks2 := dd.GetAdjacentBlockIndices(p.Rooms[dd.room].xsize);
       if Length(bloks) <> Length(bloks2) then Continue;
@@ -1001,6 +1016,22 @@ begin
       end;
     end;
   end;
+
+  // correct the doors for flipped rooms
+  // the doors in the flip room must be the doors in non flip room
+  for i := 0 to High(rooms) do
+  begin
+    if not rooms[i].isFlipRoom then Continue;
+    r := rooms[i];
+    for j := 0 to High(p.Rooms[i].doors) do
+    begin
+      d := p.Rooms[r.fliproom].doors[j];
+      p.Rooms[i].doorthingindex[j] := p.Rooms[r.fliproom].doorthingindex[j];
+      p.Rooms[i].doors[j].slot := d.slot; // may be unnecessary
+      p.Rooms[i].doors[j].room := d.room;
+    end;
+  end;
+
 
   // calculate room link value
   // making link = room number works (ngle doesn't freeze) but each room separate
