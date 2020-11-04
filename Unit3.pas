@@ -809,7 +809,7 @@ begin
   end; // loop thru rooms
 
   //TODO: UnusedThings array  // maybe not necessary - PRJ opens in roomedit
-
+  //TODO: how to update Numthings
   Result := True;
 end;
 
@@ -839,8 +839,11 @@ begin
           Rooms[i].blocks[b].textures[ii].rotation := blok.textures[ii].rotation;
           Rooms[i].blocks[b].textures[ii].triangle := blok.textures[ii].triangle;
         end;
-        Rooms[i].blocks[b].Floor := blok.Floor;
-        Rooms[i].blocks[b].ceiling := blok.ceiling;
+        if (Rooms[i].blocks[b].id = $1e) or (Rooms[i].blocks[b].id = $e) then
+        begin
+          Rooms[i].blocks[b].Floor := blok.Floor;     //copying floor and ceiling ruins my data
+          Rooms[i].blocks[b].ceiling := blok.ceiling; //need this for walls and columns but not doors
+        end;
         for ii:= 0 to 3 do
         begin
           Rooms[i].blocks[b].fdiv[ii]:=blok.fdiv[ii];
@@ -881,7 +884,10 @@ begin
     SetLength(Rooms[i].lightthingindex, r.numlights);
     for j:=0 to High(Rooms[i].lightthingindex) do
     begin
-      Rooms[i].lightthingindex[j]:=r.lightthingindex[j]
+      if NumThings = p.NumThings then
+        Rooms[i].lightthingindex[j]:=r.lightthingindex[j]
+      else
+        Rooms[i].lightthingindex[j]:=r.lightthingindex[j]+NumThings //FIXME: study aktrekker's prj
     end;
     SetLength(Rooms[i].lights, r.numlights);
     for j:=0 to High(Rooms[i].lights) do
@@ -899,13 +905,14 @@ begin
   end;
 
   NumLights := p.NumLights;
+  NumThings := NumThings + NumLights;
 
   Result:=True;
 end;
 
 function TTRProject.isCompatible(var p:TAktrekkerPRJ) : Boolean;
 var
-  i,j,k ,b: Integer;
+  i : Integer;
   r : TRoom;
 begin
   Result :=False;
