@@ -79,7 +79,7 @@ type
     flags:UInt16;
     waterscheme,reverb,altgroup:UInt8;
     isFlipRoom : Boolean; // extra fields for convenience
-    fliproom : Int16;
+    original_room : Int16;
   end;
 
 
@@ -407,7 +407,7 @@ begin
         r.reverb := br2.ReadByte;
         r.altgroup := br2.ReadByte;
         r.isFlipRoom := False;
-        r.fliproom := -1;
+        r.original_room := -1;
         rooms[i] := r;
       end;
       gauge.Progress:= Trunc(memfile.Position / file_size * gauge.MaxValue);
@@ -504,7 +504,7 @@ begin
         if rooms[i].altroom <= High(rooms) then
         begin
           rooms[rooms[i].altroom].isFlipRoom := True;
-          rooms[rooms[i].altroom].FlipRoom := i;
+          rooms[rooms[i].altroom].original_room := i;
         end;
     end;
   end;
@@ -548,7 +548,7 @@ begin
   for i:=0 to High(rooms) do
   begin
     r1:=rooms[i];
-    if r1.isFlipRoom then StrPCopy(p.Rooms[i].name, Format('Flipped Room%d',[r1.fliproom]));
+    if r1.isFlipRoom then StrPCopy(p.Rooms[i].name, Format('Flipped Room%d',[r1.original_room]));
     p.Rooms[i].x := r1.x;
 //    p.Rooms[i].y := r1.yBottom;
     p.Rooms[i].z := r1.z;
@@ -1025,8 +1025,8 @@ begin
     r := rooms[i];
     for j := 0 to High(p.Rooms[i].doors) do
     begin
-      d := p.Rooms[r.fliproom].doors[j];
-      p.Rooms[i].doorthingindex[j] := p.Rooms[r.fliproom].doorthingindex[j];
+      d := p.Rooms[r.original_room].doors[j];
+      p.Rooms[i].doorthingindex[j] := p.Rooms[r.original_room].doorthingindex[j];
       p.Rooms[i].doors[j].slot := d.slot; // may be unnecessary
       p.Rooms[i].doors[j].room := d.room;
     end;
