@@ -564,6 +564,7 @@ begin
     p.Rooms[i].ambient.a := r1.colour.a;
     p.Rooms[i].fliproom := r1.altroom;
     p.rooms[i].flags1 := r1.flags; // TODO: check they're the same
+    if r1.isFlipRoom then p.Rooms[i].flags1 := p.Rooms[i].flags1 or $2;
     SetLength(p.Rooms[i].blocks,r1.numZ*r1.numX);
     for j:=0 to r1.numZ-1 do  // rows
     begin
