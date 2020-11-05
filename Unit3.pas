@@ -875,10 +875,13 @@ end;
 
 function TTRProject.CopyLightsFromPRJ(var p:TAktrekkerPRJ) : Boolean;
 var
-  i,j,k: Integer;
+  i,j,k : Integer;
+  lightcount, lightcount2 : UInt16;
   r : TRoom;
 begin
   Result:=False;
+  lightcount := 0;
+  lightcount2 := 0;
   // assumes the two PRJs have been checked for equal numrooms
   for i:=0 to High(Rooms) do
   begin
@@ -888,10 +891,8 @@ begin
     SetLength(Rooms[i].lightthingindex, r.numlights);
     for j:=0 to High(Rooms[i].lightthingindex) do
     begin
-      if NumThings = p.NumThings then
-        Rooms[i].lightthingindex[j]:=r.lightthingindex[j]
-      else
-        Rooms[i].lightthingindex[j]:=r.lightthingindex[j]+NumThings //FIXME: study aktrekker's prj
+      Rooms[i].lightthingindex[j]:= NumThings + lightcount;
+      Inc(lightcount);
     end;
     SetLength(Rooms[i].lights, r.numlights);
     for j:=0 to High(Rooms[i].lights) do
@@ -901,6 +902,8 @@ begin
       begin
         Rooms[i].lights[j].lightdata[k] := r.lights[j].lightdata[k];
       end;
+      Rooms[i].lights[j].slot := lightcount2;
+      Inc(lightcount2);
       if Rooms[i].lights[j].id = $6000 then //aktrekker gets sign wrong for shadow intensity
       begin
         Rooms[i].lights[j].intensity := -Rooms[i].lights[j].intensity;
@@ -908,7 +911,7 @@ begin
     end;
   end;
 
-  NumLights := p.NumLights;
+  NumLights := lightcount;
   NumThings := NumThings + NumLights;
 
   Result:=True;
