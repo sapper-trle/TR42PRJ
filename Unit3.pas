@@ -249,7 +249,7 @@ begin
   end;
   SetLength(animranges,40);
   SetLength(textureSounds,256);
-  for i := 0 to High(textureSounds do
+  for i := 0 to High(textureSounds) do
   begin
     textureSounds[i] := 6; // set default stone texture sound
   end;
