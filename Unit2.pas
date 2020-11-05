@@ -673,7 +673,7 @@ begin
                 begin
                   p.Rooms[i].blocks[b].id := $6;
                   p.Rooms[i].blocks[b].Floor := -sector.Floor; // these values wrong
-                  p.Rooms[i].blocks[b].ceiling := -sector.Ceiling; // fixed later
+                  p.Rooms[i].blocks[b].ceiling := -sector.Ceiling; // fixed later when doors created
                 end;
               Continue;
             end;
@@ -987,7 +987,7 @@ begin
         found := d.SameDoor(dd);
         if found then Break;
       end;
-      // toggle opacity 1 or is it 2 have no matching door in tr4.
+      // TODO: toggle opacity have no matching door in tr4.
       if not found then Continue;
       bloks2 := dd.GetAdjacentBlockIndices(p.Rooms[dd.room].xsize);
       if Length(bloks) <> Length(bloks2) then Continue;
