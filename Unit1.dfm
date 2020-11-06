@@ -92,9 +92,11 @@ object Form1: TForm1
       Height = 17
       Hint = 'May cause errors in geometry'
       Caption = 'Doors'
+      Enabled = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 0
+      Visible = False
     end
     object CheckBox2: TCheckBox
       Left = 16
