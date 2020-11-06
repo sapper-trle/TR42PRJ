@@ -185,6 +185,8 @@ object Form1: TForm1
     end
     object Options1: TMenuItem
       Caption = '&Options'
+      Enabled = False
+      Visible = False
       object TR2PRJlinks: TMenuItem
         AutoCheck = True
         Caption = '&TR2PRJ links'

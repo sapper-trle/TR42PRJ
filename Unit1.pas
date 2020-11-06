@@ -238,6 +238,8 @@ begin
   ReportMemoryLeaksOnShutdown:=True;
   FileOpen1.Dialog.FileName:='karnak.tr4';
   Caption:=Caption+' DEBUG';
+  Options1.Visible := True;
+  Options1.Enabled := True;
 {$ENDIF}
 end;
 
