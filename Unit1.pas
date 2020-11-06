@@ -58,7 +58,7 @@ type
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
   private
     { Private declarations }
-    const program_version = 0.73;
+    const program_version = 0.80;
   public
     { Public declarations }
     l: TTRLevel;
