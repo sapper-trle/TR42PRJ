@@ -90,7 +90,10 @@ object Form1: TForm1
       Top = 16
       Width = 97
       Height = 17
+      Hint = 'May cause errors in geometry'
       Caption = 'Doors'
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 0
     end
     object CheckBox2: TCheckBox
@@ -98,7 +101,10 @@ object Form1: TForm1
       Top = 39
       Width = 97
       Height = 17
+      Hint = 'Some errors in NGLE'
       Caption = 'Textures'
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 1
     end
     object CheckBox3: TCheckBox
