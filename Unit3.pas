@@ -59,13 +59,6 @@ type
   end;
 
 type
-  TDoorHelper = record helper for TDoor
-    function SameDoor(other:TDoor):Boolean;
-    function GetBlockIndices(roomx:Integer) : TWords;
-    function GetAdjacentBlockIndices(roomx:Integer) :TWords;
-  end;
-
-type
   TBlockTex = record
     tipo : uint16;
     index : UInt8;
@@ -111,6 +104,14 @@ type
     water,mist,reflection : UInt8;
     flags2:UInt16;
     blocks : array of TBlock;
+  end;
+
+type
+  TDoorHelper = record helper for TDoor
+    function SameDoor(other:TDoor):Boolean;
+    function GetBlockIndices(roomx:Integer) : TWords;
+    function GetAdjacentBlockIndices(roomx:Integer) :TWords;
+    procedure MarkWallDoorBlocks(var room: TRoom);
   end;
 
 type TAnimTex = packed record
@@ -967,6 +968,7 @@ begin
 end;
 
 function TDoorHelper.GetBlockIndices(roomx:Integer): TWords;
+// sky/pit doors not implemented
 var
   i : Integer;
 begin
@@ -997,6 +999,21 @@ begin
     SetLength(Result, self.xsize);
     for i := 0 to High(Result) do
       Result[i] := (roomx * Self.zpos) + Self.xpos + i;
+  end;
+
+end;
+
+procedure TDoorHelper.MarkWallDoorBlocks(var room : TRoom);
+var
+  b : Integer;
+  bloks : TWords;
+begin
+  // exclude sky/pit (not implemented in GetBlockIndices)
+  if (Self.id = 4) or (Self.id = $fffb) then Exit;
+  bloks := GetBlockIndices(room.xsize);
+  for b := 0 to High(bloks) do
+  begin
+    if room.blocks[bloks[b]].id = $1e then room.blocks[bloks[b]].id := $6;
   end;
 
 end;

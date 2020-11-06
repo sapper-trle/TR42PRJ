@@ -910,7 +910,7 @@ begin
         d.xsize := (maxz - minz) div 1024;
       end;
       // south
-      if portal.normal.x = -1 then         //TODO: check no non door blocks included see karnak
+      if portal.normal.x = -1 then
       begin
         d.id := $fffd;
         d.zpos := minx div 1024;
@@ -974,7 +974,7 @@ begin
 
   for i := 0 to High(p.Rooms) do
   begin
-    if p.Rooms[i].id = 1 then Continue;
+    if p.Rooms[i].id = 1 then Break;
     for j := 0 to High(p.Rooms[i].doors) do
     begin
       d := p.Rooms[i].doors[j];
@@ -987,7 +987,6 @@ begin
         found := d.SameDoor(dd);
         if found then Break;
       end;
-      // TODO: toggle opacity have no matching door in tr4.
       if not found then Continue;
       bloks2 := dd.GetAdjacentBlockIndices(p.Rooms[dd.room].xsize);
       if Length(bloks) <> Length(bloks2) then Continue;
@@ -997,6 +996,20 @@ begin
         p.Rooms[i].blocks[bloks[k]].Floor := p.Rooms[dd.room].blocks[bloks2[k]].Floor;
         p.Rooms[i].blocks[bloks[k]].ceiling := p.Rooms[dd.room].blocks[bloks2[k]].ceiling;
       end;
+    end;
+  end;
+
+  // toggle opacity -> no door floordata in tr4 but will have portal
+  // need to mark these sectors as door blocks in prj since door created from portal
+  // seems only wall door blocks need to be fixed
+  // sky/pit door blocks fixed silently by ngle
+  for i := 0 to High(p.Rooms) do
+  begin
+    if p.Rooms[i].id = 1 then Break;
+    for j := 0 to High(p.Rooms[i].doors) do
+    begin
+      d := p.Rooms[i].doors[j];
+      d.MarkWallDoorBlocks(p.Rooms[i]);
     end;
   end;
 
@@ -1032,7 +1045,6 @@ begin
       p.Rooms[i].doors[j].room := d.room;
     end;
   end;
-
 
   // calculate room link value
   // making link = room number works (ngle doesn't freeze) but each room separate
