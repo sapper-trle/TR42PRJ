@@ -15,13 +15,12 @@ Advantages over TR2PRJ:
 
 Disadvantages:
 - Only for TR4 files
-- No door info extracted - must manually reconnect all rooms
 - No objects extracted
 - No lights extracted
 - No texturing info extracted (how aktrekker do this?)
 - No triggers extracted
 
-This is a Delphi XE7 project.
+This is a Delphi 10.3.3 project.
 
 Delphi 10 Community Edition is currently available for free.
 https://www.embarcadero.com/products/delphi/starter
@@ -36,4 +35,5 @@ Open .TR4 file. The room textures will be displayed.
 
 Click Save As to save the .prj file and .tga file.
 
-If you load a TR2PRJ project created from the same TR4 then you have the option to import the doors, textures or light info from that project.
+If you load a TR2PRJ project created from the same TR4 then you have the option to import the textures or light info from that project.
+Note from version 0.80 doors will be extracted, no longer need to import them.
