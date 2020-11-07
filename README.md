@@ -27,6 +27,7 @@ https://www.embarcadero.com/products/delphi/starter
 
 The Vampyre Imaging Library is required for .TGA support.
 Download and change the Search Path in the Project Options setting to location of Imaging Library.
+This project assumes Imaging folder is in project directory.
 Use the version from the Mercurial repository since the latest release version does not compile with Delphi XE7.
 http://sourceforge.net/p/imaginglib/code/ci/default/tree/
 
@@ -56,5 +57,5 @@ The .prj file will generate some error messages when loaded in the level editor.
   Texture importing will generate additional errors that will also be reported as fixed.
   The cause of these errors is not known yet.
 
- If aktrekker reading this, please consider releasing TR2PRJ source code.
+If aktrekker reading this, please consider releasing TR2PRJ source code.
 
