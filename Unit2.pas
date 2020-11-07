@@ -1009,7 +1009,7 @@ begin
     for j := 0 to High(p.Rooms[i].doors) do
     begin
       d := p.Rooms[i].doors[j];
-      d.MarkWallDoorBlocks(p.Rooms[i]);
+      d.MarkDoorBlocks(p.Rooms[i]);
     end;
   end;
 

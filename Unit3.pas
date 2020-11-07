@@ -111,7 +111,7 @@ type
     function SameDoor(other:TDoor):Boolean;
     function GetBlockIndices(roomx:Integer) : TWords;
     function GetAdjacentBlockIndices(roomx:Integer) :TWords;
-    procedure MarkWallDoorBlocks(var room: TRoom);
+    procedure MarkDoorBlocks(var room: TRoom);
   end;
 
 type TAnimTex = packed record
@@ -968,9 +968,8 @@ begin
 end;
 
 function TDoorHelper.GetBlockIndices(roomx:Integer): TWords;
-// sky/pit doors not implemented
 var
-  i : Integer;
+  i,x,y : Integer;
 begin
   // west
   if Self.id = 1 then
@@ -1000,22 +999,54 @@ begin
     for i := 0 to High(Result) do
       Result[i] := (roomx * Self.zpos) + Self.xpos + i;
   end;
+  // sky or pit
+  if (Self.id = 4) or (Self.id = $fffb) then
+  begin
+    SetLength(Result, self.xsize*self.zsize);
+    for y := 0 to Self.zsize-1 do
+    begin
+      for x := 0 to Self.xsize-1 do
+      begin
+        i := x + Self.xsize * y;
+        Result[i] := (roomx * Self.zpos) + Self.xpos + (roomx * y + x);
+      end;
+    end;
+  end;
+
 
 end;
 
-procedure TDoorHelper.MarkWallDoorBlocks(var room : TRoom);
+procedure TDoorHelper.MarkDoorBlocks(var room : TRoom);
+// door blocks where opacity was set won't have been set as door blocks in tr4
 var
   b : Integer;
-  bloks : TWords;
+  bloks : TWords; // indices
+  blok : TBlock;
 begin
-  // exclude sky/pit (not implemented in GetBlockIndices)
-  if (Self.id = 4) or (Self.id = $fffb) then Exit;
   bloks := GetBlockIndices(room.xsize);
-  for b := 0 to High(bloks) do
+  // sky/pit marking unnecessary - ngle fixes
+  if (Self.id = 4) or (Self.id = $fffb) then
   begin
-    if room.blocks[bloks[b]].id = $1e then room.blocks[bloks[b]].id := $6;
+    for b := 0 to High(bloks) do
+    begin
+      blok := room.blocks[bloks[b]];
+      if (Self.id = 4) and not(blok.id in [3, 7]) then
+        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 2; //floor opacity set
+      if (Self.id = $fffb) and not(blok.id in [5, 7]) then
+        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 4; //ceiling opacity set
+    end;
+  end
+  else // walls
+  begin
+    for b := 0 to High(bloks) do
+    begin
+      if room.blocks[bloks[b]].id = $1e then  // wall block
+      begin
+        room.blocks[bloks[b]].id := $6; // door block
+        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or $8; // opacity set
+      end;
+    end;
   end;
-
 end;
 
 function TDoorHelper.SameDoor(other: TDoor): Boolean;
