@@ -1012,8 +1012,6 @@ begin
       end;
     end;
   end;
-
-
 end;
 
 procedure TDoorHelper.MarkDoorBlocks(var room : TRoom);
@@ -1043,7 +1041,7 @@ begin
       if room.blocks[bloks[b]].id = $1e then  // wall block
       begin
         room.blocks[bloks[b]].id := $6; // door block
-        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or $8; // opacity set
+        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 8; // opacity set
       end;
     end;
   end;
