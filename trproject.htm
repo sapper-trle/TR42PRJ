@@ -2632,22 +2632,28 @@ is on the North side of the block and faces to the North. As for the section num
   <td valign="top" width="436" style='border:solid Black 0.5pt;padding:0.0pt 0.0pt 5.5pt 5.5pt ;'>
   <p class=Normal>Various flags describing the block.</p>
   
-  <p class=Normal>BLOCK_F1_MONKEY<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x4000</u></p>
+  <p class=Normal>BLOCK_F1_MONKEY<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x4000</u></p>
   
   <p class=Normal>&nbsp;  This flag is set if this is a monkey block.</p>
   
   <p class=Normal>&nbsp;</p>
   
-  <p class=Normal>BLOCK_F1_OPACITY2<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x1000</u></p>
+  <p class=Normal>BLOCK_F1_OPACITY2<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x1000</u></p>
   
-  <p class=Normal>&nbsp;  This flag is set if Toggle Opacity 2 is on. For this to work, the Toggle Opacity (OPACITY) flag must ALSO be set.</p>
+  <p class=Normal>&nbsp;  This flag is set if Toggle Opacity 2 is on. For this to work, the Toggle Opacity (OPACITY) flag must ALSO be set. 
+  (Walls)</p>
   
   <p class=Normal>&nbsp;</p>
   
-  <p class=Normal>BLOCK_F1_FDOOR<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0800</u></p>
+  <p class=Normal>BLOCK_F1_F<u>_OPACITY2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0800</u></p>
   
-  <p class=Normal>&nbsp;  Not sure exactly. But it is only set if this block is part of a floor door. One more thing I have to figure out.</p>
+  <p class=Normal>&nbsp; This flag is set if Opacity2 is set for floor.</p>
   
+  <p class=Normal>&nbsp;</p>
+  
+  <p class=Normal>BLOCK_F1_C<u>_OPACITY2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0400</u></p>
+  
+  <p class=Normal>This flag is set if Opacity2 is set for ceiling.</p>
   <p class=Normal>&nbsp;</p>
   
   <p class=Normal>BLOCK_F1_CLIMB_N<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0200</u></p>
@@ -2662,7 +2668,7 @@ is on the North side of the block and faces to the North. As for the section num
   
   <p class=Normal>&nbsp;</p>
   
-  <p class=Normal>BLOCK_F1_CLIMB_S<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0080</u></p>
+  <p class=Normal>BLOCK_F1_CLIMB_S<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x0080</u></p>
   
   <p class=Normal>&nbsp;  This flag is set if climb is turned on for the south of the block.</p>
   
@@ -2674,13 +2680,13 @@ is on the North side of the block and faces to the North. As for the section num
   
   <p class=Normal>&nbsp;</p>
   
-  <p class=Normal>BLOCK_F1_BOX<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0020</u></p>
+  <p class=Normal>BLOCK_F1_BOX<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0020</u></p>
   
   <p class=Normal>&nbsp;  This flag is turned on if this is a box block.</p>
   
   <p class=Normal>&nbsp;</p>
   
-  <p class=Normal>BLOCK_F1_DEATH<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0010</u></p>
+  <p class=Normal>BLOCK_F1_DEATH<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0010</u></p>
   
   <p class=Normal>&nbsp;  This flag is turned on if this is a death block.</p>
   
@@ -2688,13 +2694,19 @@ is on the North side of the block and faces to the North. As for the section num
   
   <p class=Normal>BLOCK_F1_OPACITY<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0008</u></p>
   
-  <p class=Normal>&nbsp;  This flag is turned on for Toggle Opacity AND for Toggle Opacity 2.</p>
-  
+  <p class=Normal>&nbsp;  This flag is turned on for Toggle Opacity AND for Toggle Opacity 2. 
+  (Walls)</p>
   <p class=Normal>&nbsp;</p>
   
-  <p class=Normal>BLOCK_F1_FALL<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0002</u></p>
+  <p class=Normal>BLOCK_F1_C_OPACITY<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0004</u></p>
   
-  <p class=Normal>&nbsp; This flag is turned on if Toggle Opacity is set for floor.</p>
+  <p class=Normal>&nbsp;This flag is turned on if either Opacity is set for 
+  ceiling.</p>
+  <p class=Normal>&nbsp;</p>
+  
+  <p class=Normal>BLOCK_F1_F_OPACITY<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x0002</u></p>
+  
+  <p class=Normal>&nbsp; This flag is turned on if either Opacity is set for floor.</p>
   
   <p class=Normal>&nbsp;</p>
   
