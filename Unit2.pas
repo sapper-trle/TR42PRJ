@@ -787,12 +787,20 @@ begin
                 // if corners indicate opposite diagonal
                 if (a[1]>Max(a[0],a[2])) or (a[3]>Max(a[0],a[2])) or (a[1]<Min(a[0],a[2])) or (a[3]<Min(a[0],a[2])) then
                   p.Rooms[i].blocks[b].flags3:=p.Rooms[i].blocks[b].flags3 or $1;
+                if fd.tipo = nocol3 then
+                  p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $4;
+                if fd.tipo = nocol4 then
+                  p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $2;
               end;
               if fd.tipo in [split1,nocol1,nocol2] then // function 7 splits
               begin
                 // if corners indicate opposite diagonal
                 if (a[0]>Max(a[1],a[3])) or (a[2]>Max(a[1],a[3])) or (a[0]<Min(a[1],a[3])) or (a[2]<Min(a[1],a[3])) then
                   p.Rooms[i].blocks[b].flags3:=p.Rooms[i].blocks[b].flags3 or $1;
+                if fd.tipo = nocol1 then
+                  p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $4;
+                if fd.tipo = nocol2 then
+                  p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $2;
               end;
               Continue;
             end; //floor splits
@@ -809,6 +817,10 @@ begin
               a[3]:=fd.corners[3];
               maxCorner:=maxIntvalue(a);
               p.Rooms[i].blocks[b].ceiling := p.Rooms[i].blocks[b].ceiling+maxCorner;
+              if fd.tipo in [nocol5, nocol7] then
+                p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $10;
+              if fd.tipo in [nocol6, nocol8] then
+                p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $8;
               Continue;
             end; // ceiling splits
           end; // loop thru FData
