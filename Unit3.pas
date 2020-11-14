@@ -1025,14 +1025,19 @@ begin
   // sky/pit marking unnecessary - ngle fixes
   if (Self.id = 4) or (Self.id = $fffb) then
   begin
-    for b := 0 to High(bloks) do
-    begin
-      blok := room.blocks[bloks[b]];
-      if (Self.id = 4) and not(blok.id in [3, 7]) then
-        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 2; //floor opacity set
-      if (Self.id = $fffb) and not(blok.id in [5, 7]) then
-        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 4; //ceiling opacity set
-    end;
+  // needs fix. some door blocks are validly not marked as door
+  // e.g no collision, and some floor blocks - see room 13 settomb
+  // setting opacity flag for these causes display errors fixed by draw doors
+//    for b := 0 to High(bloks) do
+//    begin
+//      blok := room.blocks[bloks[b]];
+//      //ignore no collision blocks
+//      if (blok.flags2 and $1e) > 0 then Continue;
+//      if (Self.id = 4) and not(blok.id in [3, 7]) then
+//        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 2; //floor opacity set
+//      if (Self.id = $fffb) and not(blok.id in [5, 7]) then
+//        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 4; //ceiling opacity set
+//    end;
   end
   else // walls
   begin
