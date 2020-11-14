@@ -616,6 +616,7 @@ begin
           p.Rooms[i].blocks[b].ceiling := -r1.yTop div 256;
         end
         // black door blocks - no good without door arrays implemented
+        // no collision blocks need to be marked as id 1, changed later in floordata loop
         else if (sector.RoomBelow<>255) and (sector.RoomAbove<>255) then
         begin
           p.Rooms[i].blocks[b].id := $7;
@@ -802,6 +803,11 @@ begin
                 if fd.tipo = nocol2 then
                   p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $2;
               end;
+              if fd.tipo in [nocol1..nocol4] then
+              begin
+                if p.Rooms[i].blocks[b].id = $3 then p.Rooms[i].blocks[b].id := $1;
+                if p.Rooms[i].blocks[b].id = $7 then p.Rooms[i].blocks[b].id := $5;//todo check this
+              end;
               Continue;
             end; //floor splits
             if fd.tipo in [split3,split4,nocol5..nocol8] then // ceiling splits
@@ -821,6 +827,11 @@ begin
                 p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $10;
               if fd.tipo in [nocol6, nocol8] then
                 p.Rooms[i].blocks[b].flags2:=p.Rooms[i].blocks[b].flags2 or $8;
+              if fd.tipo in [nocol5..nocol8] then
+              begin
+                if p.Rooms[i].blocks[b].id = $5 then p.Rooms[i].blocks[b].id := $1;
+                if p.Rooms[i].blocks[b].id = $7 then p.Rooms[i].blocks[b].id := $3;//todo check this
+              end;
               Continue;
             end; // ceiling splits
           end; // loop thru FData
