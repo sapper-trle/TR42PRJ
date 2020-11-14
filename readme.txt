@@ -26,8 +26,8 @@ The .prj file will generate some error messages when loaded in the level editor.
   The cause of this error is known. It is required so the editor links all the rooms
   for moving in the 2D map display.
 
-  Texture importing will generate additional errors that will also be reported as fixed.
-  The cause of these errors is not known yet.
+  Texture importing will generate additional errors that NGLE also reports as fixed.
+  The cause of these errors is logged in "error.log" in the NGLE folder.
 
 If aktrekker reading this, please consider releasing TR2PRJ source code.
 
