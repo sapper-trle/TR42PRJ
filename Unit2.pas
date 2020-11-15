@@ -565,6 +565,8 @@ begin
     p.Rooms[i].fliproom := r1.altroom;
     p.rooms[i].flags1 := r1.flags; // TODO: check they're the same
     if r1.isFlipRoom then p.Rooms[i].flags1 := p.Rooms[i].flags1 or $2;
+    p.Rooms[i].yBottom := -r1.yBottom div 256;
+    p.Rooms[i].yTop := -r1.yTop div 256;
     SetLength(p.Rooms[i].blocks,r1.numZ*r1.numX);
     for j:=0 to r1.numZ-1 do  // rows
     begin

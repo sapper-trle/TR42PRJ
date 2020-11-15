@@ -77,6 +77,11 @@ type
     flags2,flags3 : UInt16;
   end;
 
+  TBlockHelper = record helper for TBlock
+    function HasCornerDataFloor:Boolean;
+    function HasCornerDataCeil:Boolean;
+  end;
+
 type
   TRoom = record
     id: uint16;
@@ -104,6 +109,8 @@ type
     water,mist,reflection : UInt8;
     flags2:UInt16;
     blocks : array of TBlock;
+    // auxillary fields
+    yTop, yBottom : Integer;
   end;
 
 type
@@ -1022,22 +1029,34 @@ var
   blok : TBlock;
 begin
   bloks := GetBlockIndices(room.xsize);
-  // sky/pit marking unnecessary - ngle fixes
+  // sky/pit marking as door unnecessary - ngle fixes
+  // try here to create opacity blocks (not opacity2)
   if (Self.id = 4) or (Self.id = $fffb) then
   begin
-  // needs fix. some door blocks are validly not marked as door
+  // /todo: needs fixing. Some blocks can have same floor height as door!!
+  // Some door blocks are validly not marked as door
   // e.g no collision, and some floor blocks - see room 13 settomb
-  // setting opacity flag for these causes display errors fixed by draw doors
-//    for b := 0 to High(bloks) do
-//    begin
-//      blok := room.blocks[bloks[b]];
-//      //ignore no collision blocks
-//      if (blok.flags2 and $1e) > 0 then Continue;
-//      if (Self.id = 4) and not(blok.id in [3, 7]) then
-//        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 2; //floor opacity set
-//      if (Self.id = $fffb) and not(blok.id in [5, 7]) then
-//        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 4; //ceiling opacity set
-//    end;
+  // setting opacity flag for these causes display errors (fixed by draw doors)
+    for b := 0 to High(bloks) do
+    begin
+      blok := room.blocks[bloks[b]];
+      //ignore no collision blocks and wall blocks
+      if ((blok.flags2 and $1e) > 0) or (blok.id = $e) then Continue;
+      // ignore blocks that have floor height different from door blocks
+      if Self.id = 4 then
+      begin
+        if (blok.Floor > room.yBottom) or (blok.HasCornerDataFloor) then Continue;
+      end
+      else
+      // ignore blocks that have ceiling height different from door blocks
+      begin
+        if (blok.ceiling < room.yTop) or (blok.HasCornerDataCeil) then Continue;
+      end;
+      if (Self.id = 4) and not(blok.id in [3, 7]) then
+        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 2; //floor opacity set
+      if (Self.id = $fffb) and not(blok.id in [5, 7]) then
+        room.blocks[bloks[b]].flags1 := room.blocks[bloks[b]].flags1 or 4; //ceiling opacity set
+    end;
   end
   else // walls
   begin
@@ -1060,6 +1079,22 @@ begin
      (Self.room = other.filler[0]) //using filler[0] as door toRoom
   then Result := True
   else Result := False;
+end;
+
+{ TBlockHelper }
+
+function TBlockHelper.HasCornerDataCeil: Boolean;
+begin
+  Result := (ceilcorner[0]=0) and (ceilcorner[1]=0) and
+            (ceilcorner[2]=0) and (ceilcorner[3]=0);
+  Result := not Result;
+end;
+
+function TBlockHelper.HasCornerDataFloor: Boolean;
+begin
+  Result := (floorcorner[0]=0) and (floorcorner[1]=0) and
+            (floorcorner[2]=0) and (floorcorner[3]=0);
+  Result := not Result;
 end;
 
 end.
