@@ -38,6 +38,10 @@ Click Save As to save the .prj file and .tga file.
 
 Only geometry and doors will be extracted to the .prj.
 
+Opacity (the kind you cannot pass through) setting will also be extracted. But in
+some cases of Opacity between stacked rooms some sectors may be incorrectly set
+and display incorrectly. Clicking "Draw Doors" in NGLE will fix those sectors.
+
 If you load a TR2PRJ project created from the same .TR4 then you have the option
 to import the textures and/or light info from that project.
 
@@ -47,6 +51,9 @@ To save the .tga file only, right click on the image and select Save TGA.
 The geometry will not be perfect. Tall split sectors cannot be decompiled exactly
 for instance.
 
+Also, sometimes NGLE will switch wall sectors next to doors to floor sectors.
+Need to convert back to wall sectors in NGLE in that case.
+
 The .prj file will generate some error messages when loaded in the level editor.
 
   A "Broken map at room 0" error will always appear. This will be auto repaired.
@@ -55,7 +62,11 @@ The .prj file will generate some error messages when loaded in the level editor.
   for moving in the 2D map display.
 
   Texture importing will generate additional errors that NGLE also reports as fixed.
-  The cause of these errors is logged in "error.log" in the NGLE folder..
+  These errors are logged in "error.log" in the NGLE folder.
+
+  TR42PRJ will create a text file with same name as the saved prj file which will
+  describe the cause of some of these errors.
+
 
 If aktrekker reading this, please consider releasing TR2PRJ source code.
 
