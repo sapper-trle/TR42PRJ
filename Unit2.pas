@@ -565,6 +565,7 @@ begin
     p.Rooms[i].fliproom := r1.altroom;
     p.rooms[i].flags1 := r1.flags; // TODO: check they're the same
     if r1.isFlipRoom then p.Rooms[i].flags1 := p.Rooms[i].flags1 or $2;
+    p.Rooms[i].isFlipRoom := r1.isFlipRoom;
     p.Rooms[i].flags2 := p.Rooms[i].flags2 or r1.altgroup;
     p.Rooms[i].yBottom := -r1.yBottom div 256;
     p.Rooms[i].yTop := -r1.yTop div 256;
@@ -612,6 +613,9 @@ begin
           p.Rooms[i].blocks[b].ceiling := -r1.yTop div 256;
         end
         // green wall blocks except those with door FloorData
+        // NGLE sometimes switches wall block adjacent to doors to floor block
+        // no idea why, definitely wall block in prj file
+        // may need to set heights same as neighbours instead of ybottom and ytop
         else if (sector.Floor = -127) then
         begin
           p.Rooms[i].blocks[b].id := $e;
@@ -859,6 +863,7 @@ var
   doorcount : Integer;
   bloks, bloks2 : TWords;
   found:Boolean;
+  rm : Word;
 begin
   // Uses aktrekker's method of using portals to determine doors
 
@@ -988,57 +993,6 @@ begin
   // update number of things
   p.NumThings := doorcount;
 
-  // fix floor and ceiling values for wall door blocks
-  // the values used for door blocks must be the same as the
-  // corresponding floor blocks in the other room which are
-  // adjacent to the door in the other room
-  // e.g.
-  // floor adjacent room0   |s1|s2|s3|s4|
-  // south door room0       |n1|n2|n3|n4|
-  // north door room1       |s1|s2|s3|s4|
-  // floor adjacent room1   |n1|n2|n3|n4|
-
-  for i := 0 to High(p.Rooms) do
-  begin
-    if p.Rooms[i].id = 1 then Break;
-    for j := 0 to High(p.Rooms[i].doors) do
-    begin
-      d := p.Rooms[i].doors[j];
-      // exclude sky or pit doors
-      if (d.id = 4) or (d.id = $fffb) then Continue;
-      bloks := d.GetBlockIndices(p.Rooms[i].xsize);
-      for k := 0 to High(p.Rooms[d.filler[0]].doors) do
-      begin
-        dd := p.Rooms[d.filler[0]].doors[k];
-        found := d.SameDoor(dd);
-        if found then Break;
-      end;
-      if not found then Continue;
-      bloks2 := dd.GetAdjacentBlockIndices(p.Rooms[dd.room].xsize);
-      if Length(bloks) <> Length(bloks2) then Continue;
-      for k := 0 to High(bloks) do
-      begin
-//        if p.Rooms[i].blocks[bloks[k]].id <> 6 then Continue;
-        p.Rooms[i].blocks[bloks[k]].Floor := p.Rooms[dd.room].blocks[bloks2[k]].Floor;
-        p.Rooms[i].blocks[bloks[k]].ceiling := p.Rooms[dd.room].blocks[bloks2[k]].ceiling;
-      end;
-    end;
-  end;
-
-  // toggle opacity -> no door floordata in tr4 but will have portal
-  // need to mark these sectors as door blocks in prj since door created from portal
-  // seems only wall door blocks need to be fixed
-  // sky/pit door blocks fixed silently by ngle
-  for i := 0 to High(p.Rooms) do
-  begin
-    if p.Rooms[i].id = 1 then Break;
-    for j := 0 to High(p.Rooms[i].doors) do
-    begin
-      d := p.Rooms[i].doors[j];
-      d.MarkDoorBlocks(p.Rooms[i]);
-    end;
-  end;
-
   // determine slot value
   for i := 0 to High(rooms) do
   begin
@@ -1069,6 +1023,61 @@ begin
       p.Rooms[i].doorthingindex[j] := p.Rooms[r.original_room].doorthingindex[j];
       p.Rooms[i].doors[j].slot := d.slot; // may be unnecessary
       p.Rooms[i].doors[j].room := d.room;
+    end;
+  end;
+
+  // fix floor and ceiling values for wall door blocks
+  // the values used for door blocks must be the same as the
+  // corresponding floor blocks in the other room which are
+  // adjacent to the door in the other room
+  // e.g.
+  // floor adjacent room0   |s1|s2|s3|s4|
+  // south door room0       |n1|n2|n3|n4|
+  // north door room1       |s1|s2|s3|s4|
+  // floor adjacent room1   |n1|n2|n3|n4|
+  for i := 0 to High(p.Rooms) do
+  begin
+    if p.Rooms[i].id = 1 then Break;
+    for j := 0 to High(p.Rooms[i].doors) do
+    begin
+      d := p.Rooms[i].doors[j];
+      // exclude sky or pit doors
+      if (d.id = 4) or (d.id = $fffb) then Continue;
+      bloks := d.GetBlockIndices(p.Rooms[i].xsize);
+      for k := 0 to High(p.Rooms[d.filler[0]].doors) do
+      begin
+        dd := p.Rooms[d.filler[0]].doors[k];
+        found := (d.slot = p.Rooms[d.filler[0]].doorthingindex[k]);
+        if found then Break;
+      end;
+      if not found then Continue;
+      bloks2 := dd.GetAdjacentBlockIndices(p.Rooms[dd.room].xsize);
+      if Length(bloks) <> Length(bloks2) then Continue;
+      // fliprooms connected to fliprooms use those floor/ceiling values
+      { TODO -oUsername -c : may need to same flip group 19/11/2020 4:48:23 PM }
+      if p.Rooms[i].isFlipRoom and (p.Rooms[dd.room].fliproom > -1) then
+        rm := p.Rooms[dd.room].fliproom
+      else
+        rm := dd.room;
+      for k := 0 to High(bloks) do
+      begin
+        p.Rooms[i].blocks[bloks[k]].Floor := p.Rooms[rm].blocks[bloks2[k]].Floor;
+        p.Rooms[i].blocks[bloks[k]].ceiling := p.Rooms[rm].blocks[bloks2[k]].ceiling;
+      end;
+    end;
+  end;
+
+  // toggle opacity -> no door floordata in tr4 but will have portal
+  // need to mark these sectors as door blocks in prj since door created from portal
+  // seems only wall door blocks need to be fixed
+  // sky/pit door blocks fixed silently by ngle
+  for i := 0 to High(p.Rooms) do
+  begin
+    if p.Rooms[i].id = 1 then Break;
+    for j := 0 to High(p.Rooms[i].doors) do
+    begin
+      d := p.Rooms[i].doors[j];
+      d.MarkDoorBlocks(p.Rooms[i]);
     end;
   end;
 
