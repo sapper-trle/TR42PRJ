@@ -4,6 +4,8 @@ A program for the Tomb Raider Level Editor (TRLE) community.
 
 Converts a Tomb Raider 4 .TR4 file to a TRLE project .prj file
 
+Bugfix: Texture sounds now set to default of stone. Earlier versions were setting to mud.
+
 Usage:
 
 Open .TR4 file. The room textures will be displayed.
