@@ -194,10 +194,19 @@ end;
 procedure TForm1.FileSaveAs1Accept(Sender: TObject);
 var
   p: TTRProject;
-  s : string;
+  s,s2,s3 : string;
 begin
+  s2 :='';
   p := l.ConvertToPRJ(FileSaveAs1.Dialog.FileName);
   l.MakeDoors(p,TR2PRJlinks.Checked);
+  if p.InvalidBlockHeights then
+  begin
+    s3 := ChangeFileExt(FileSaveAs1.Dialog.FileName,'.txt');
+    p.InvalidHeights.SaveToFile(s3);
+    s3 := ExtractFileName(s3);
+    s2 := sLineBreak + 'Error report created:';
+    s2 := s2 + ' ' + s3;
+  end;
   if Assigned(aktrekker) and p.isCompatible(aktrekker) then
   begin
     if CheckBox1.Checked then p.CopyDoorsFromPRJ(aktrekker);
@@ -207,7 +216,7 @@ begin
   p.Save(FileSaveAs1.Dialog.FileName);
   p.Free;
   s := ExtractFileName(filesaveas1.dialog.filename);
-  MessageDlg(Format('%s saved.',[s]), mtInformation,[mbOK],0);
+  MessageDlg(Format('%s saved.%s',[s, s2]), mtInformation,[mbOK],0);
 //  Halt(0);
 end;
 

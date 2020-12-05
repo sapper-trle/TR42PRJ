@@ -111,6 +111,7 @@ type
     blocks : array of TBlock;
     // auxillary fields
     yTop, yBottom : Integer;
+    isFlipRoom : Boolean;
   end;
 
 type
@@ -187,13 +188,16 @@ type
     animranges : array of TAnimTex;
     textureSounds : array of UInt8;
     BumpSettings : array of UInt8;
+    InvalidHeights : TStringList;
     function Save(filename: string): Boolean;
     function Load(filename: string): UInt8;
     function CopyDoorsFromPRJ(var p:TAktrekkerPRJ): Boolean;
     function CopyTexFromPRJ(var p:TAktrekkerPRJ) : Boolean;
     function CopyLightsFromPRJ(var p:TAktrekkerPRJ) : Boolean;
     function isCompatible(var p:TAktrekkerPRJ) : Boolean;
+    function InvalidBlockHeights: Boolean;
     constructor Create(numrooms:UInt16;numslots:UInt32);
+    destructor Destroy ; override;
   end;
 
   TAktrekkerPRJ = class(TTRProject)
@@ -262,7 +266,13 @@ begin
     textureSounds[i] := 6; // set default stone texture sound
   end;
   SetLength(BumpSettings,256);
+  InvalidHeights := TStringList.Create;
+end;
 
+destructor TTRProject.Destroy;
+begin
+  InvalidHeights.Free;
+  inherited Destroy;
 end;
 
 procedure TTRProject.writeSz(var sz :array of Char;len:Integer;var bw: TBinaryWriter);
@@ -766,6 +776,46 @@ begin
     br.Free;
     memfile.Free;
   end;
+end;
+
+function TTRProject.InvalidBlockHeights: Boolean;
+var
+  x, z, r, b : Integer;
+  s : string;
+  rm : TRoom;
+begin
+  InvalidHeights.Clear;
+  for r := 0 to High(Rooms) do
+  begin
+    rm := Rooms[r];
+    if rm.id = 1 then Continue;
+    for z := 0 to rm.zsize-1 do
+    begin
+//      if (z = 0) or (z=rm.zsize-1) then Continue; // ignore border blocks - doors really
+      for x := 0 to rm.xsize-1 do
+      begin
+//        if (x=0) or (x=rm.xsize-1) then Continue;
+        b := (z * rm.xsize) + x;
+        if rm.blocks[b].Floor >= rm.blocks[b].ceiling then
+        begin
+//          Rooms[r].blocks[b].Floor := rm.blocks[b].ceiling - 1;
+          s := Format('Room %3d Block %3d, %3d :: f %3d c %3d',[r, x+1, z+1, rm.blocks[b].Floor,rm.blocks[b].ceiling]);
+          if (x=0) or (x=rm.xsize-1) or (z=0) or (z = rm.zsize-1) then
+            s := s + ' (outer border block)';
+          InvalidHeights.Append(s);
+        end;
+      end;//x
+    end;//z
+  end;
+  s :='The following blocks had a floor height >= ceiling height which is invalid in NGLE.';
+  s := s + sLineBreak + 'NGLE will report as errors and repair to make floor height = (ceiling height-1).';
+  s := s + sLineBreak + 'If block is outer border wall block only need to fix for texturing.';
+  s := s + sLineBreak + 'If block is outer border door block, need to fix corresponding block adjacent to door in other room.';
+  s := s + sLineBreak + 'Block 6, 4 means 6th block in row from west side and 4th block in column down from north side.';
+  s := s + sLineBreak + Format('%d errors',[InvalidHeights.Count]);
+  if InvalidHeights.Count > 0 then
+    InvalidHeights.Insert(0,s);
+  Result := InvalidHeights.Count > 0;
 end;
 
 function TTRProject.CopyDoorsFromPRJ(var p:TaktrekkerPRJ): Boolean;
