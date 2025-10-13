@@ -16,4 +16,5 @@
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
 
+*.pas linguist-detectable=true
 *.html linguist-detectable=false
