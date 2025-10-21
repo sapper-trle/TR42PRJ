@@ -16,4 +16,4 @@
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
 
-*.htm -linguist-documentation
+trproject.htm -linguist-documentation
